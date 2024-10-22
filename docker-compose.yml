@@ -1,0 +1,57 @@
+# -----------------------------------------------
+#1    docker-compose -p roomservice_comp3095 -f docker-compose.yml up -d
+#        ---------This command will start the containers in detached mode without rebuilding the image (if they exist)
+#
+#2. docker-compose -p roomservice_comp3095 -f docker-compose.yml up -d --build
+#        ---------This command forces the rebuild of all images, even if they already exist, before starting the containers
+#------------------------------------------------
+
+version: '3.9'
+
+services:
+  room-service:
+    build:
+      context: ./RoomService    # Path where the Dockerfile is located
+      dockerfile: ./Dockerfile  # Specify Dockerfile if necessary
+    container_name: room-service
+    ports:
+      - "8090:8090"             # Expose the application port to the host
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RoomService
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      - postgres                # Ensure postgres service is started first
+    networks:
+      - spring
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_DB: RoomService   # The name of the PostgreSQL database
+      POSTGRES_USER: admin       # The PostgreSQL username
+      POSTGRES_PASSWORD: password # The PostgreSQL password
+    ports:
+      - "5432:5432"              # Expose the PostgreSQL port to the host
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data  # Persist PostgreSQL data locally
+    networks:
+      - spring
+
+  pgadmin:
+    image: dpage/pgadmin4:latest # Use the latest pgAdmin image
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com      # Default pgAdmin email for login
+      PGADMIN_DEFAULT_PASSWORD: admin             # Default pgAdmin password
+    ports:
+      - "5052:80"              # Expose pgAdmin on port 5050 of the host
+    depends_on:
+      - postgres                # Ensure the postgres service is started first
+    networks:
+      - spring
+
+networks:
+  spring:
+    driver: bridge

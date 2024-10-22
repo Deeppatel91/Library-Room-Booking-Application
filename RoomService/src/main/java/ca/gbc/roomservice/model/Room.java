@@ -1,61 +1,32 @@
 package ca.gbc.roomservice.model;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "Rooms")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Room {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private String roomName;
+
+    @Column(nullable = false)
     private Integer capacity;
+
+    @Column(nullable = false)
     private String features;
+
+    @Column(nullable = false)
     private Boolean available;
-
-    // Constructors
-    public Room() {}
-
-    public Room(Long id, String roomName, Integer capacity, String features, Boolean available) {
-        this.id = id;
-        this.roomName = roomName;
-        this.capacity = capacity;
-        this.features = features;
-        this.available = available;
-    }
-
-    // Getters and setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getRoomName() {
-        return roomName;
-    }
-
-    public void setRoomName(String roomName) {
-        this.roomName = roomName;
-    }
-
-    public Integer getCapacity() {
-        return capacity;
-    }
-
-    public void setCapacity(Integer capacity) {
-        this.capacity = capacity;
-    }
-
-    public String getFeatures() {
-        return features;
-    }
-
-    public void setFeatures(String features) {
-        this.features = features;
-    }
-
-    public Boolean getAvailable() {
-        return available;
-    }
-
-    public void setAvailable(Boolean available) {
-        this.available = available;
-    }
 }

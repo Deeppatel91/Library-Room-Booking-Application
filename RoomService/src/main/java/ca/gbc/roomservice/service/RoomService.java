@@ -1,48 +1,16 @@
 package ca.gbc.roomservice.service;
 
-import ca.gbc.roomservice.model.Room;
+import ca.gbc.roomservice.dto.RoomRequest;
+import ca.gbc.roomservice.dto.RoomResponse;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface RoomService {
+    RoomResponse createRoom(RoomRequest roomRequest);
+    List<RoomResponse> getAllRooms();
+    RoomResponse updateRoom(Long id, RoomRequest roomRequest);
+    void deleteRoom(Long id);
+    List<RoomResponse> getAvailableRooms();
 
-    /**
-     * Retrieves all available rooms.
-     *
-     * @return a list of all available rooms.
-     */
-    List<Room> findAllAvailableRooms();
-
-    /**
-     * Finds a room by its ID.
-     *
-     * @param id the ID of the room.
-     * @return an Optional containing the found room, or an empty Optional if no room is found.
-     */
-    Optional<Room> findById(Long id);
-
-    /**
-     * Adds a new room to the database.
-     *
-     * @param room the room to add.
-     * @return the newly added room.
-     */
-    Room save(Room room);
-
-    /**
-     * Updates details of an existing room.
-     *
-     * @param room the room with updated details.
-     * @return the updated room.
-     */
-    Room update(Room room);
-
-    /**
-     * Deletes a room by its ID.
-     *
-     * @param id the ID of the room to delete.
-     * @return true if the room was successfully deleted, false otherwise.
-     */
-    boolean delete(Long id);
+    RoomResponse getRoomById(Long roomId);
 }
