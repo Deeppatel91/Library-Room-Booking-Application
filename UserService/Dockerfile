@@ -26,7 +26,7 @@ RUN mkdir /app
 COPY --from=builder /home/gradle/src/build/libs/*.jar /app/user-service.jar
 
 # Expose the application port
-EXPOSE 8044
+EXPOSE 8054
 
 # Set environment variables for PostgreSQL
 ENV SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/UserService \

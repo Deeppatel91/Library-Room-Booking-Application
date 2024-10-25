@@ -60,4 +60,16 @@ public class JwtTokenProvider {
                 .getBody();
         return claimsResolver.apply(claims);
     }
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(secretKey.getBytes()) // Use byte array of the secret key
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;  // Invalid or expired token
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-
+#docker-compose -p roomservice_comp3095 -f docker-compose.yml up -d --build
 services:
   room-service:
     build:
@@ -23,7 +23,7 @@ services:
       dockerfile: ./Dockerfile  # Specify Dockerfile for user-service
     container_name: user-service
     ports:
-      - "8044:8044"             # Expose UserService port 8044 to the host
+      - "8054:8054"             # Expose UserService port 8044 to the host
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/UserService
       SPRING_DATASOURCE_USERNAME: admin
@@ -64,7 +64,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com      # Default pgAdmin email for login
       PGADMIN_DEFAULT_PASSWORD: admin             # Default pgAdmin password
     ports:
-      - "5052:80"              # Expose pgAdmin on port 5052 of the host
+      - "5055:80"              # Expose pgAdmin on port 5052 of the host
     depends_on:
       postgres:
         condition: service_healthy

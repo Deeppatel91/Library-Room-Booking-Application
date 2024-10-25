@@ -35,7 +35,7 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         // Replace "your_jwt_secret" with the actual secret from application.properties or an environment variable
-        return NimbusJwtDecoder.withSecretKey(new SecretKeySpec("your_jwt_secret".getBytes(), "HmacSHA256")).build();
+        return NimbusJwtDecoder.withSecretKey(new SecretKeySpec("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBVcGRhdGVkIiwiZW1haWwiOiJqb2hudXBkYXRlZEBleGFtcGxlLmNvbSIsInJvbGUiOiJzdHVkZW50IiwidXNlclR5cGUiOiJzdHVkZW50IiwiaWF0IjoxNzI5ODIwOTA1LCJleHAiOjE3Mjk5MDczMDV9.nDvKqscIiuJwRSlMFdBVlZusvqJXGGvLmqOn7zloFsk".getBytes(), "HmacSHA256")).build();
     }
 
     // Password encoder for encrypting user passwords
