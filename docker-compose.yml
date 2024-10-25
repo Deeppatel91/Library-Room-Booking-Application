@@ -1,12 +1,3 @@
-# -----------------------------------------------
-#1    docker-compose -p roomservice_comp3095 -f docker-compose.yml up -d
-#        ---------This command will start the containers in detached mode without rebuilding the image (if they exist)
-#
-#2. docker-compose -p roomservice_comp3095 -f docker-compose.yml up -d --build
-#        ---------This command forces the rebuild of all images, even if they already exist, before starting the containers
-#------------------------------------------------
-
-version: '3.9'
 
 services:
   room-service:
@@ -21,7 +12,28 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
     depends_on:
-      - postgres                # Ensure postgres service is started first
+      postgres:
+        condition: service_healthy
+    networks:
+      - spring
+
+  user-service:
+    build:
+      context: ./UserService    # Path where the Dockerfile for UserService is located
+      dockerfile: ./Dockerfile  # Specify Dockerfile for user-service
+    container_name: user-service
+    ports:
+      - "8044:8044"             # Expose UserService port 8044 to the host
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/UserService
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBVcGRhdGVkIiwiZW1haWwiOiJqb2hudXBkYXRlZEBleGFtcGxlLmNvbSIsInJvbGUiOiJzdHVkZW50IiwidXNlclR5cGUiOiJzdHVkZW50IiwiaWF0IjoxNzI5ODIwOTA1LCJleHAiOjE3Mjk5MDczMDV9.nDvKqscIiuJwRSlMFdBVlZusvqJXGGvLmqOn7zloFsk
+      JWT_EXPIRATION: 86400000
+      SPRING_JPA_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect  # Explicitly set Hibernate dialect for PostgreSQL
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - spring
 
@@ -29,15 +41,21 @@ services:
     image: postgres:latest
     container_name: postgres
     environment:
-      POSTGRES_DB: RoomService   # The name of the PostgreSQL database
       POSTGRES_USER: admin       # The PostgreSQL username
       POSTGRES_PASSWORD: password # The PostgreSQL password
+      POSTGRES_MULTIPLE_DATABASES: RoomService,UserService  # Create multiple databases for both services
     ports:
       - "5432:5432"              # Expose the PostgreSQL port to the host
     volumes:
       - ./data/postgres:/var/lib/postgresql/data  # Persist PostgreSQL data locally
     networks:
       - spring
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin" ]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+
 
   pgadmin:
     image: dpage/pgadmin4:latest # Use the latest pgAdmin image
@@ -46,9 +64,10 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com      # Default pgAdmin email for login
       PGADMIN_DEFAULT_PASSWORD: admin             # Default pgAdmin password
     ports:
-      - "5052:80"              # Expose pgAdmin on port 5050 of the host
+      - "5052:80"              # Expose pgAdmin on port 5052 of the host
     depends_on:
-      - postgres                # Ensure the postgres service is started first
+      postgres:
+        condition: service_healthy
     networks:
       - spring
 

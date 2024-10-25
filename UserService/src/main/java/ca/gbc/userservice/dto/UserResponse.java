@@ -17,4 +17,7 @@ public class UserResponse {
     private String role;  // e.g., "student", "staff", "faculty"
     private String userType;  // e.g., "student", "staff", "faculty"
     private String token;  // JWT token
+
+
+
 }

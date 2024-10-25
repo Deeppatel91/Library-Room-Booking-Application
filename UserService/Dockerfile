@@ -26,13 +26,13 @@ RUN mkdir /app
 COPY --from=builder /home/gradle/src/build/libs/*.jar /app/user-service.jar
 
 # Expose the application port
-EXPOSE 7070
+EXPOSE 8044
 
 # Set environment variables for PostgreSQL
-ENV SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5470/userservice_db \
+ENV SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/UserService \
     SPRING_DATASOURCE_USERNAME=admin \
     SPRING_DATASOURCE_PASSWORD=password \
-    JWT_SECRET=your_jwt_secret_key \
+    JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBVcGRhdGVkIiwiZW1haWwiOiJqb2hudXBkYXRlZEBleGFtcGxlLmNvbSIsInJvbGUiOiJzdHVkZW50IiwidXNlclR5cGUiOiJzdHVkZW50IiwiaWF0IjoxNzI5ODIwOTA1LCJleHAiOjE3Mjk5MDczMDV9.nDvKqscIiuJwRSlMFdBVlZusvqJXGGvLmqOn7zloFsk \
     JWT_EXPIRATION=86400000
 
 # Entry point to run the application

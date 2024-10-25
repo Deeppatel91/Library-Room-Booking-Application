@@ -4,10 +4,13 @@ import ca.gbc.userservice.dto.AuthorizationRequest;
 import ca.gbc.userservice.dto.AuthorizationResponse;
 import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.dto.UserResponse;
+import ca.gbc.userservice.security.JwtTokenProvider;
 import ca.gbc.userservice.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -16,10 +19,11 @@ public class UserController {
     @Autowired
     private UserServiceImpl userService;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
     /**
      * Register a new user
-     * @param userRequest user details for registration
-     * @return UserResponse with JWT token
      */
     @PostMapping("/register")
     public ResponseEntity<UserResponse> registerUser(@RequestBody UserRequest userRequest) {
@@ -29,8 +33,6 @@ public class UserController {
 
     /**
      * Authenticate user (login) and return JWT token
-     * @param authorizationRequest user credentials (email and password)
-     * @return AuthorizationResponse with JWT token and user info
      */
     @PostMapping("/login")
     public ResponseEntity<AuthorizationResponse> authenticateUser(@RequestBody AuthorizationRequest authorizationRequest) {
@@ -38,13 +40,40 @@ public class UserController {
         return ResponseEntity.ok(authResponse);
     }
 
+
     /**
-     * Example of a secured endpoint that requires a valid JWT token to access
-     * @return String message if token is valid
+     * Update a user's profile (either their own or admin can update any user)
      */
-    @GetMapping("/secure")
-    public ResponseEntity<String> securedEndpoint() {
-        // This endpoint could be secured by a JWT token validation filter (configured separately in Spring Security)
-        return ResponseEntity.ok("You have accessed a secured endpoint!");
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest, HttpServletRequest request) {
+        String token = jwtTokenProvider.resolveToken(request);
+        String emailFromToken = jwtTokenProvider.getUsername(token);
+        String roleFromToken = jwtTokenProvider.getRole(token);
+
+        // Only allow update if the user is the owner of the profile or an admin
+        if (userService.isOwner(id, emailFromToken) || "ADMIN".equals(roleFromToken)) {
+            UserResponse updatedUser = userService.updateUser(id, userRequest, token);
+            return ResponseEntity.ok(updatedUser);
+        } else {
+            return ResponseEntity.status(403).body(null); // Forbidden
+        }
+    }
+
+    /**
+     * Delete a user's profile (either their own or admin can delete any user)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id, HttpServletRequest request) {
+        String token = jwtTokenProvider.resolveToken(request);
+        String emailFromToken = jwtTokenProvider.getUsername(token);
+        String roleFromToken = jwtTokenProvider.getRole(token);
+
+        // Only allow deletion if the user is the owner of the profile or an admin
+        if (userService.isOwner(id, emailFromToken) || "ADMIN".equals(roleFromToken)) {
+            userService.deleteUser(id, token);
+            return ResponseEntity.ok("User deleted successfully");
+        } else {
+            return ResponseEntity.status(403).body("You are not authorized to delete this profile");
+        }
     }
 }

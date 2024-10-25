@@ -6,64 +6,77 @@ import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.dto.UserResponse;
 import ca.gbc.userservice.model.Users;
 import ca.gbc.userservice.repository.UsersRepository;
-import ca.gbc.userservice.security.JwtUtil;
+import ca.gbc.userservice.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserServiceImpl {
+public class UserServiceImpl implements UserService {
 
     private final UsersRepository usersRepository;
-    private final PasswordEncoder passwordEncoder; // For encoding passwords
-    private final JwtUtil jwtUtil; // Utility class for JWT token operations
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    public UserServiceImpl(UsersRepository usersRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public UserServiceImpl(UsersRepository usersRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
         this.usersRepository = usersRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    /**
-     * Register a new user
-     */
+    @Override
     public UserResponse registerUser(UserRequest userRequest) {
-        // Check if the user with the same email already exists
         if (isEmailTaken(userRequest.getEmail())) {
             throw new IllegalArgumentException("Email already in use");
         }
 
-        // Encrypt the password before saving it
         String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
-
-        // Create and save new user
         Users newUser = saveNewUser(userRequest, encodedPassword);
+        String token = jwtTokenProvider.generateToken(newUser.getEmail(), newUser.getRole());
 
-        // Generate JWT token for the new user
-        String token = jwtUtil.generateToken(newUser.getEmail(), newUser.getRole());
-
-        // Return user response with token
         return mapToUserResponse(newUser, token);
     }
 
-    /**
-     * Authenticate the user and generate a JWT token
-     */
+    @Override
     public AuthorizationResponse authenticateUser(AuthorizationRequest authorizationRequest) {
         Users user = usersRepository.findByEmail(authorizationRequest.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Check if the provided password matches the stored encrypted password
         if (!passwordEncoder.matches(authorizationRequest.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Invalid password");
         }
 
-        // Generate JWT token
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
-
-        // Return the token and user details
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole());
         return mapToAuthorizationResponse(user, token);
+    }
+
+    @Override
+    public UserResponse updateUser(Long id, UserRequest userRequest, String token) {
+        Users currentUser = validateUserOrAdmin(id, token);
+
+        currentUser.setName(userRequest.getName());
+        currentUser.setEmail(userRequest.getEmail());
+        currentUser.setRole(userRequest.getRole());
+        currentUser.setUserType(userRequest.getUserType());
+
+        usersRepository.save(currentUser);
+
+        String updatedToken = jwtTokenProvider.generateToken(currentUser.getEmail(), currentUser.getRole());
+        return mapToUserResponse(currentUser, updatedToken);
+    }
+
+    @Override
+    public void deleteUser(Long id, String token) {
+        Users currentUser = validateUserOrAdmin(id, token);
+        usersRepository.deleteById(currentUser.getId());
+    }
+
+    @Override
+    public boolean isOwner(Long userId, String emailFromToken) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getEmail().equals(emailFromToken);
     }
 
     // Utility method to check if email is already taken
@@ -105,4 +118,23 @@ public class UserServiceImpl {
                 .userType(user.getUserType())
                 .build();
     }
+
+    // Check if the user is authorized to update/delete their own profile or if they are an admin
+    private Users validateUserOrAdmin(Long id, String token) {
+        String emailFromToken = jwtTokenProvider.getUsername(token);
+        String roleFromToken = jwtTokenProvider.getRole(token);
+
+        // Get the user by ID
+        Users userToUpdate = usersRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Allow if the current user is the owner of the profile or an admin
+        if (userToUpdate.getEmail().equals(emailFromToken) || roleFromToken.equals("ADMIN")) {
+            return userToUpdate;
+        } else {
+            throw new SecurityException("You are not authorized to perform this action");
+        }
+    }
+
+
 }
