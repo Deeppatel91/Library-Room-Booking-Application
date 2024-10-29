@@ -1,140 +1,121 @@
 package ca.gbc.userservice.service;
 
-import ca.gbc.userservice.dto.AuthorizationRequest;
-import ca.gbc.userservice.dto.AuthorizationResponse;
 import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.dto.UserResponse;
+import ca.gbc.userservice.model.Roles;
 import ca.gbc.userservice.model.Users;
+import ca.gbc.userservice.model.UsersTypes;
 import ca.gbc.userservice.repository.UsersRepository;
-import ca.gbc.userservice.security.JwtTokenProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    public UserServiceImpl(UsersRepository usersRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
+    public UserServiceImpl(UsersRepository usersRepository, PasswordEncoder passwordEncoder) {
         this.usersRepository = usersRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    // User Management Methods
+    @Override
+    public UserResponse createUser(UserRequest request) {
+        Users user = new Users();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Roles.valueOf("ROLE_" + request.getRole().toUpperCase()));
+        user.setUserType(UsersTypes.valueOf(request.getUserType().toUpperCase()));
+
+        Users savedUser = usersRepository.save(user);
+        return mapToResponse(savedUser);
     }
 
     @Override
-    public UserResponse registerUser(UserRequest userRequest) {
-        if (isEmailTaken(userRequest.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
-        }
-
-        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
-        Users newUser = saveNewUser(userRequest, encodedPassword);
-        String token = jwtTokenProvider.generateToken(newUser.getEmail(), newUser.getRole());
-
-        return mapToUserResponse(newUser, token);
-    }
-
-    @Override
-    public AuthorizationResponse authenticateUser(AuthorizationRequest authorizationRequest) {
-        Users user = usersRepository.findByEmail(authorizationRequest.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        if (!passwordEncoder.matches(authorizationRequest.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid password");
-        }
-
-        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole());
-        return mapToAuthorizationResponse(user, token);
-    }
-
-    @Override
-    public UserResponse updateUser(Long id, UserRequest userRequest, String token) {
-        Users currentUser = validateUserOrAdmin(id, token);
-
-        currentUser.setName(userRequest.getName());
-        currentUser.setEmail(userRequest.getEmail());
-        currentUser.setRole(userRequest.getRole());
-        currentUser.setUserType(userRequest.getUserType());
-
-        usersRepository.save(currentUser);
-
-        String updatedToken = jwtTokenProvider.generateToken(currentUser.getEmail(), currentUser.getRole());
-        return mapToUserResponse(currentUser, updatedToken);
-    }
-
-    @Override
-    public void deleteUser(Long id, String token) {
-        Users currentUser = validateUserOrAdmin(id, token);
-        usersRepository.deleteById(currentUser.getId());
-    }
-
-    @Override
-    public boolean isOwner(Long userId, String emailFromToken) {
+    public UserResponse getUserById(Long userId) {
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return user.getEmail().equals(emailFromToken);
+        return mapToResponse(user);
     }
 
-    // Utility method to check if email is already taken
-    private boolean isEmailTaken(String email) {
-        return usersRepository.findByEmail(email).isPresent();
+    @Override
+    public UserResponse updateUser(Long userId, UserRequest request) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Roles.valueOf("ROLE_" + request.getRole().toUpperCase()));
+        user.setUserType(UsersTypes.valueOf(request.getUserType().toUpperCase()));
+
+        Users updatedUser = usersRepository.save(user);
+        return mapToResponse(updatedUser);
     }
 
-    // Save new user to the repository
-    private Users saveNewUser(UserRequest userRequest, String encodedPassword) {
-        Users newUser = Users.builder()
-                .name(userRequest.getName())
-                .email(userRequest.getEmail())
-                .password(encodedPassword)
-                .role(userRequest.getRole())
-                .userType(userRequest.getUserType())
-                .build();
-
-        return usersRepository.save(newUser);
+    @Override
+    public void deleteUser(Long userId) {
+        usersRepository.deleteById(userId);
     }
 
-    // Utility method to map user to UserResponse
-    private UserResponse mapToUserResponse(Users user, String token) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .userType(user.getUserType())
-                .token(token)
-                .build();
+    // Admin Methods
+    @Override
+    public UserResponse deactivateUser(Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setActive(false);
+        Users updatedUser = usersRepository.save(user);
+        return mapToResponse(updatedUser);
     }
 
-    // Utility method to map user to AuthorizationResponse
-    private AuthorizationResponse mapToAuthorizationResponse(Users user, String token) {
-        return AuthorizationResponse.builder()
-                .token(token)
-                .email(user.getEmail())
-                .role(user.getRole())
-                .userType(user.getUserType())
-                .build();
+    @Override
+    public UserResponse activateUser(Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setActive(true);
+        Users updatedUser = usersRepository.save(user);
+        return mapToResponse(updatedUser);
     }
 
-    // Check if the user is authorized to update/delete their own profile or if they are an admin
-    private Users validateUserOrAdmin(Long id, String token) {
-        String emailFromToken = jwtTokenProvider.getUsername(token);
-        String roleFromToken = jwtTokenProvider.getRole(token);
-
-        // Get the user by ID
-        Users userToUpdate = usersRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        // Allow if the current user is the owner of the profile or an admin
-        if (userToUpdate.getEmail().equals(emailFromToken) || roleFromToken.equals("ADMIN")) {
-            return userToUpdate;
-        } else {
-            throw new SecurityException("You are not authorized to perform this action");
-        }
+    @Override
+    public UserResponse changeUserRole(Long userId, String role) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setRole(Roles.valueOf("ROLE_" + role.toUpperCase()));
+        Users updatedUser = usersRepository.save(user);
+        return mapToResponse(updatedUser);
     }
 
+    // UserDetailsService Method
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Users user = usersRepository.findByEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
 
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),
+                user.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()))
+        );
+    }
+
+    // Utility Method to Map Users to UserResponse DTO
+    private UserResponse mapToResponse(Users user) {
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getUserType(),
+                user.isActive()
+        );
+    }
 }

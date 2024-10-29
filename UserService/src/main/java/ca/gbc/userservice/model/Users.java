@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Users")
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,18 +18,21 @@ public class Users {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;  // Primary key
 
-    @Column(nullable = false)
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private String role;  // e.g., "student", "staff", "faculty"
+    @Enumerated(EnumType.STRING)
+    private Roles role;
 
+    @Enumerated(EnumType.STRING)
+    private UsersTypes userType;
+
+    @Builder.Default
     @Column(nullable = false)
-    private String userType;  // e.g., "student", "staff", "faculty"
+    private boolean active = true;  // Active status for activation and deactivation
 }

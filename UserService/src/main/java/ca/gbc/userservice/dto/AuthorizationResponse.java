@@ -11,7 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AuthorizationResponse {
     private String token;  // JWT token
-    private String email;  // User's email
-    private String role;   // e.g., "student", "staff", "faculty"
-    private String userType;  // e.g., "student", "staff", "faculty"
+
 }

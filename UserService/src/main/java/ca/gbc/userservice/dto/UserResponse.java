@@ -1,6 +1,7 @@
 package ca.gbc.userservice.dto;
 
-
+import ca.gbc.userservice.model.Roles;
+import ca.gbc.userservice.model.UsersTypes;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,10 +15,9 @@ public class UserResponse {
     private Long id;
     private String name;
     private String email;
-    private String role;  // e.g., "student", "staff", "faculty"
-    private String userType;  // e.g., "student", "staff", "faculty"
-    private String token;  // JWT token
-
+    private Roles role;  // e.g., "student", "staff", "faculty"
+    private UsersTypes userType;  // e.g., "student", "staff", "faculty"
+    private boolean active;
 
 
 }

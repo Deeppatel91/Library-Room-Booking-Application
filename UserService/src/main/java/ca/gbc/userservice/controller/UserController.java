@@ -1,79 +1,112 @@
 package ca.gbc.userservice.controller;
 
+import ca.gbc.userservice.dto.UserResponse;
 import ca.gbc.userservice.dto.AuthorizationRequest;
 import ca.gbc.userservice.dto.AuthorizationResponse;
 import ca.gbc.userservice.dto.UserRequest;
-import ca.gbc.userservice.dto.UserResponse;
+import ca.gbc.userservice.model.Users;
+import ca.gbc.userservice.repository.UsersRepository;
 import ca.gbc.userservice.security.JwtTokenProvider;
-import ca.gbc.userservice.service.UserServiceImpl;
+import ca.gbc.userservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserServiceImpl userService;
+    private final UserService userService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UsersRepository usersRepository;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    public UserController(UserService userService,
+                          AuthenticationManager authenticationManager,
+                          JwtTokenProvider jwtTokenProvider,
+                          UsersRepository usersRepository) {
+        this.userService = userService;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.usersRepository = usersRepository;
+    }
 
-    /**
-     * Register a new user
-     */
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> registerUser(@RequestBody UserRequest userRequest) {
-        UserResponse userResponse = userService.registerUser(userRequest);
+    // User Management Endpoints
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
+        var userResponse = userService.createUser(request);
         return ResponseEntity.ok(userResponse);
     }
 
-    /**
-     * Authenticate user (login) and return JWT token
-     */
-    @PostMapping("/login")
-    public ResponseEntity<AuthorizationResponse> authenticateUser(@RequestBody AuthorizationRequest authorizationRequest) {
-        AuthorizationResponse authResponse = userService.authenticateUser(authorizationRequest);
-        return ResponseEntity.ok(authResponse);
+    @GetMapping("/{userId}")
+    // Uncomment for access control: @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'FACULTY', 'STUDENT')")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
+        var userResponse = userService.getUserById(userId);
+        return ResponseEntity.ok(userResponse);
     }
 
-
-    /**
-     * Update a user's profile (either their own or admin can update any user)
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest, HttpServletRequest request) {
-        String token = jwtTokenProvider.resolveToken(request);
-        String emailFromToken = jwtTokenProvider.getUsername(token);
-        String roleFromToken = jwtTokenProvider.getRole(token);
-
-        // Only allow update if the user is the owner of the profile or an admin
-        if (userService.isOwner(id, emailFromToken) || "ADMIN".equals(roleFromToken)) {
-            UserResponse updatedUser = userService.updateUser(id, userRequest, token);
-            return ResponseEntity.ok(updatedUser);
-        } else {
-            return ResponseEntity.status(403).body(null); // Forbidden
-        }
+    @PutMapping("/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'FACULTY')")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId, @RequestBody UserRequest request) {
+        var updatedUser = userService.updateUser(userId, request);
+        return ResponseEntity.ok(updatedUser);
     }
 
-    /**
-     * Delete a user's profile (either their own or admin can delete any user)
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id, HttpServletRequest request) {
-        String token = jwtTokenProvider.resolveToken(request);
-        String emailFromToken = jwtTokenProvider.getUsername(token);
-        String roleFromToken = jwtTokenProvider.getRole(token);
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
+    }
 
-        // Only allow deletion if the user is the owner of the profile or an admin
-        if (userService.isOwner(id, emailFromToken) || "ADMIN".equals(roleFromToken)) {
-            userService.deleteUser(id, token);
-            return ResponseEntity.ok("User deleted successfully");
-        } else {
-            return ResponseEntity.status(403).body("You are not authorized to delete this profile");
+    // Admin Endpoints
+    @PutMapping("/deactivate/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> deactivateUser(@PathVariable Long userId) {
+        var userResponse = userService.deactivateUser(userId);
+        return ResponseEntity.ok(userResponse);
+    }
+
+    @PutMapping("/activate/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> activateUser(@PathVariable Long userId) {
+        var userResponse = userService.activateUser(userId);
+        return ResponseEntity.ok(userResponse);
+    }
+
+    @PutMapping("/role/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> changeUserRole(@PathVariable Long userId, @RequestParam String role) {
+        var userResponse = userService.changeUserRole(userId, role);
+        return ResponseEntity.ok(userResponse);
+    }
+
+    // Authentication Endpoint
+    @PostMapping("/authenticate")
+    public ResponseEntity<AuthorizationResponse> createAuthenticationToken(@RequestBody AuthorizationRequest request) {
+        try {
+
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+
+            final UserDetails userDetails = userService.loadUserByUsername(request.getEmail());
+            Users user = usersRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+            final String jwt = jwtTokenProvider.generateToken(userDetails, String.valueOf(user.getId()));
+
+            return ResponseEntity.ok(new AuthorizationResponse(jwt));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(403).body(new AuthorizationResponse("Authentication failed"));
         }
     }
 }
