@@ -1,14 +1,17 @@
 package ca.gbc.userservice.controller;
 
-import ca.gbc.userservice.dto.UserResponse;
 import ca.gbc.userservice.dto.AuthorizationRequest;
 import ca.gbc.userservice.dto.AuthorizationResponse;
 import ca.gbc.userservice.dto.UserRequest;
+import ca.gbc.userservice.dto.UserResponse;
+import ca.gbc.userservice.model.Roles;
 import ca.gbc.userservice.model.Users;
 import ca.gbc.userservice.repository.UsersRepository;
 import ca.gbc.userservice.security.JwtTokenProvider;
 import ca.gbc.userservice.service.UserService;
+import ca.gbc.userservice.service.UsersInformationImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +30,9 @@ public class UserController {
     private final UsersRepository usersRepository;
 
     @Autowired
+    private UsersInformationImpl userDetailsService;
+
+    @Autowired
     public UserController(UserService userService,
                           AuthenticationManager authenticationManager,
                           JwtTokenProvider jwtTokenProvider,
@@ -37,23 +43,35 @@ public class UserController {
         this.usersRepository = usersRepository;
     }
 
-    // User Management Endpoints
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/init")
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
-        var userResponse = userService.createUser(request);
-        return ResponseEntity.ok(userResponse);
+        try {
+            if (userService.noAdminExists() || request.getRole() == Roles.ADMIN) {
+                UserResponse userResponse = userService.createUser(request);
+                return ResponseEntity.ok(userResponse);
+            }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid role or userType: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')") // Restrict access to only ADMIN role
+    public ResponseEntity<UserResponse> createNewUser(@RequestBody UserRequest request) {
+        UserResponse userResponse = userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
 
     @GetMapping("/{userId}")
-    // Uncomment for access control: @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'FACULTY', 'STUDENT')")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
         var userResponse = userService.getUserById(userId);
         return ResponseEntity.ok(userResponse);
     }
 
     @PutMapping("/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'FACULTY')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId, @RequestBody UserRequest request) {
         var updatedUser = userService.updateUser(userId, request);
         return ResponseEntity.ok(updatedUser);
@@ -66,7 +84,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // Admin Endpoints
     @PutMapping("/deactivate/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> deactivateUser(@PathVariable Long userId) {
@@ -84,15 +101,19 @@ public class UserController {
     @PutMapping("/role/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> changeUserRole(@PathVariable Long userId, @RequestParam String role) {
-        var userResponse = userService.changeUserRole(userId, role);
-        return ResponseEntity.ok(userResponse);
+        try {
+            Roles roleEnum = Roles.valueOf(role.toUpperCase());
+            var userResponse = userService.changeUserRole(userId, roleEnum);
+            return ResponseEntity.ok(userResponse);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new UserResponse());
+        }
     }
 
-    // Authentication Endpoint
-    @PostMapping("/authenticate")
+    @PostMapping("/login")
     public ResponseEntity<AuthorizationResponse> createAuthenticationToken(@RequestBody AuthorizationRequest request) {
         try {
-
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
@@ -101,12 +122,11 @@ public class UserController {
             Users user = usersRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-
             final String jwt = jwtTokenProvider.generateToken(userDetails, String.valueOf(user.getId()));
 
             return ResponseEntity.ok(new AuthorizationResponse(jwt));
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(403).body(new AuthorizationResponse("Authentication failed"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new AuthorizationResponse("Authentication failed"));
         }
     }
 }

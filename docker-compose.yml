@@ -1,4 +1,5 @@
-#docker-compose -p roomservice_comp3095 -f docker-compose.yml up -d --build
+#
+
 services:
   room-service:
     build:
@@ -28,7 +29,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/UserService
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
-      JWT_SECRET: 5367566B5970743373367639792F423F4528482B4D6251655468576D5A7134743788888
+      JWT_SECRET: "5367566B5970743373367639792F423F4528482B4D6251655468576D5A713474"
       JWT_EXPIRATION: 86400000
       SPRING_JPA_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect  # Explicitly set Hibernate dialect for PostgreSQL
     depends_on:

@@ -1,6 +1,6 @@
-package ca.gbc.userservice.configurations;
+package ca.gbc.userservice.security;
 
-import ca.gbc.userservice.security.JwtRequestFilter;
+import ca.gbc.userservice.service.UsersInformationImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,9 +18,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfigurations {
 
     private final JwtRequestFilter jwtRequestFilter;
-    private final UserDetailsService userDetailsService;
+    private final UsersInformationImpl userDetailsService;
 
-    public SecurityConfigurations(JwtRequestFilter jwtRequestFilter, UserDetailsService userDetailsService) {
+    public SecurityConfigurations(JwtRequestFilter jwtRequestFilter, UsersInformationImpl userDetailsService) {
         this.jwtRequestFilter = jwtRequestFilter;
         this.userDetailsService = userDetailsService;
     }
@@ -29,22 +28,22 @@ public class SecurityConfigurations {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF for stateless API
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/authenticate").permitAll()   // Public endpoint for authentication
-                        .requestMatchers("/api/users").hasRole("ADMIN")           // Only admins can create users
-                        .requestMatchers("/api/users/**").authenticated()         // Authenticated users can access user-related endpoints
-                        .anyRequest().authenticated()                              // All other endpoints require authentication
+                        .requestMatchers("/api/users/login").permitAll()
+                        .requestMatchers("/api/users/init").permitAll()
+                        .requestMatchers("/api/users/**").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)   // Stateless session
-                );
-
-        // Add JWT filter before the UsernamePasswordAuthenticationFilter
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

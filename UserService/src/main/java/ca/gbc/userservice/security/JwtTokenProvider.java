@@ -21,14 +21,22 @@ public class JwtTokenProvider {
     private String secretKey;
 
     @Value("${jwt.expiration}")
-    private long jwtExpirationInMs;  // Expiration time in milliseconds
+    private long jwtExpirationInMs;
 
     private Key getSigningKey() {
-        byte[] keyBytes = hexStringToByteArray(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            // Ensure JWT_SECRET is valid and decoded as bytes
+            byte[] keyBytes = hexStringToByteArray(secretKey);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid JWT secret key format", e);
+        }
     }
 
     private byte[] hexStringToByteArray(String s) {
+        if (s.length() % 2 != 0) {
+            throw new IllegalArgumentException("Hexadecimal string length must be even.");
+        }
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
@@ -66,12 +74,12 @@ public class JwtTokenProvider {
     public String generateToken(UserDetails userDetails, String userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
-        claims.put("userId", userId);  // Add userId to the token
+        claims.put("userId", userId); // Add userId to the token
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))  // Configurable expiration time
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

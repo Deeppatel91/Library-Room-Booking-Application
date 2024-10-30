@@ -16,7 +16,7 @@ public class Users {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;  // Primary key
+    private Long id;
 
     private String name;
 
@@ -26,7 +26,7 @@ public class Users {
     @Column(nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)  // Apply here for the field
     private Roles role;
 
     @Enumerated(EnumType.STRING)
@@ -34,5 +34,5 @@ public class Users {
 
     @Builder.Default
     @Column(nullable = false)
-    private boolean active = true;  // Active status for activation and deactivation
+    private boolean active = true;
 }

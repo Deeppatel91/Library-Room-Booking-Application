@@ -4,7 +4,6 @@ import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.dto.UserResponse;
 import ca.gbc.userservice.model.Roles;
 import ca.gbc.userservice.model.Users;
-import ca.gbc.userservice.model.UsersTypes;
 import ca.gbc.userservice.repository.UsersRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -32,8 +31,9 @@ public class UserServiceImpl implements UserService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Roles.valueOf("ROLE_" + request.getRole().toUpperCase()));
-        user.setUserType(UsersTypes.valueOf(request.getUserType().toUpperCase()));
+        user.setRole(request.getRole()); // Use Roles enum directly
+        user.setUserType(request.getUserType()); // Use UsersTypes enum directly
+        user.setActive(true); // Default active status
 
         Users savedUser = usersRepository.save(user);
         return mapToResponse(savedUser);
@@ -54,8 +54,8 @@ public class UserServiceImpl implements UserService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Roles.valueOf("ROLE_" + request.getRole().toUpperCase()));
-        user.setUserType(UsersTypes.valueOf(request.getUserType().toUpperCase()));
+        user.setRole(request.getRole()); // Use Roles enum directly
+        user.setUserType(request.getUserType()); // Use UsersTypes enum directly
 
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
@@ -86,10 +86,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse changeUserRole(Long userId, String role) {
+    public UserResponse changeUserRole(Long userId, Roles role) { // Changed to accept Roles directly
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setRole(Roles.valueOf("ROLE_" + role.toUpperCase()));
+        user.setRole(role);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
     }
@@ -106,6 +106,17 @@ public class UserServiceImpl implements UserService {
                 Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()))
         );
     }
+
+    @Override
+    public boolean noAdminExists() {
+        return usersRepository.countByRole(Roles.ADMIN) == 0;
+    }
+
+    @Override
+    public Object changeUserRole(Long userId, String name) {
+        return null;
+    }
+
 
     // Utility Method to Map Users to UserResponse DTO
     private UserResponse mapToResponse(Users user) {

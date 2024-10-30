@@ -2,6 +2,7 @@ package ca.gbc.userservice.service;
 
 import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.dto.UserResponse;
+import ca.gbc.userservice.model.Roles;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public interface UserService{
@@ -11,7 +12,13 @@ public interface UserService{
     void deleteUser(Long userId);
     UserResponse deactivateUser(Long userId);
     UserResponse activateUser(Long userId);
-    UserResponse changeUserRole(Long userId, String role);
+
+
+    UserResponse changeUserRole(Long userId, Roles role);
 
     UserDetails loadUserByUsername(String email);
+
+    boolean noAdminExists();
+
+    Object changeUserRole(Long userId, String name);
 }

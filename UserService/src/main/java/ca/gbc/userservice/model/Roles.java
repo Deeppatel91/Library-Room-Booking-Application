@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum Roles {
-    ROLE_ADMIN,
-    ROLE_STAFF,
-    ROLE_FACULTY,
-    ROLE_STUDENT
+    ADMIN,
+    STAFF,
+    FACULTY,
+    STUDENT
 }
