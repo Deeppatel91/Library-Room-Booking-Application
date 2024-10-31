@@ -1,13 +1,13 @@
-#
+version: '3.9'
 
 services:
   room-service:
     build:
-      context: ./RoomService    # Path where the Dockerfile is located
-      dockerfile: ./Dockerfile  # Specify Dockerfile if necessary
+      context: ./RoomService
+      dockerfile: Dockerfile
     container_name: room-service
     ports:
-      - "8090:8090"             # Expose the application port to the host
+      - "8090:8090"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RoomService
       SPRING_DATASOURCE_USERNAME: admin
@@ -20,20 +20,38 @@ services:
 
   user-service:
     build:
-      context: ./UserService    # Path where the Dockerfile for UserService is located
-      dockerfile: ./Dockerfile  # Specify Dockerfile for user-service
+      context: ./UserService
+      dockerfile: Dockerfile
     container_name: user-service
     ports:
-      - "8054:8054"             # Expose UserService port 8044 to the host
+      - "8054:8054"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/UserService
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       JWT_SECRET: "5367566B5970743373367639792F423F4528482B4D6251655468576D5A713474"
       JWT_EXPIRATION: 86400000
-      SPRING_JPA_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect  # Explicitly set Hibernate dialect for PostgreSQL
+      SPRING_JPA_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
     depends_on:
       postgres:
+        condition: service_healthy
+    networks:
+      - spring
+
+  booking-service:
+    build:
+      context: ./BookingService
+      dockerfile: Dockerfile
+    container_name: booking-service
+    ports:
+      - "8060:8060"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/BookingService?authSource=admin
+      JWT_SECRET: "5367566B5970743373367639792F423F4528482B4D6251655468576D5A713474"
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      mongodb:
         condition: service_healthy
     networks:
       - spring
@@ -42,13 +60,13 @@ services:
     image: postgres:latest
     container_name: postgres
     environment:
-      POSTGRES_USER: admin       # The PostgreSQL username
-      POSTGRES_PASSWORD: password # The PostgreSQL password
-      POSTGRES_MULTIPLE_DATABASES: RoomService,UserService  # Create multiple databases for both services
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: RoomService  # Default database; others can be created manually
     ports:
-      - "5432:5432"              # Expose the PostgreSQL port to the host
+      - "5432:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data  # Persist PostgreSQL data locally
+      - ./data/postgres:/var/lib/postgresql/data
     networks:
       - spring
     healthcheck:
@@ -57,20 +75,57 @@ services:
       timeout: 30s
       retries: 5
 
-
   pgadmin:
-    image: dpage/pgadmin4:latest # Use the latest pgAdmin image
+    image: dpage/pgadmin4:latest
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com      # Default pgAdmin email for login
-      PGADMIN_DEFAULT_PASSWORD: admin             # Default pgAdmin password
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "5055:80"              # Expose pgAdmin on port 5052 of the host
+      - "5055:80"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - spring
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - spring
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    ports:
+      - "8065:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - spring
+
+volumes:
+  postgres_data:
+  mongodb_data:
 
 networks:
   spring:

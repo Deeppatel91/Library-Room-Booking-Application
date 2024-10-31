@@ -1,4 +1,12 @@
 package ca.gbc.bookingservice.dto;
 
-public class BookingResponse {
-}
+import java.time.LocalDateTime;
+
+public record BookingResponse(
+        String id,
+        String userId,
+        String roomId,
+        LocalDateTime startTime,
+        LocalDateTime endTime,
+        String purpose
+) {}
