@@ -3,6 +3,7 @@ package ca.gbc.bookingservice.controller;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
 import ca.gbc.bookingservice.service.BookingService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +21,20 @@ public class BookingController {
     }
 
 
+
+
     @PostMapping
-    public ResponseEntity<BookingResponse> createBooking(@RequestBody BookingRequest bookingRequest, Authentication authentication) {
+    public ResponseEntity<?> createBooking(@RequestBody BookingRequest bookingRequest, Authentication authentication) {
         String userIdFromToken = (String) authentication.getPrincipal();
-        BookingResponse booking = bookingService.createBooking(bookingRequest, userIdFromToken);
-        return ResponseEntity.ok(booking);
+        try {
+            BookingResponse booking = bookingService.createBooking(bookingRequest, userIdFromToken);
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            // Return 409 Conflict status with a custom error message
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
+
 
 
     @GetMapping("/{id}")

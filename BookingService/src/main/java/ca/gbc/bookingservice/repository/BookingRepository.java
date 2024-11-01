@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface BookingRepository extends MongoRepository<Booking, String> {
 
-    @Query("{ 'roomId': ?0, 'startTime': { $lt: ?2 }, 'endTime': { $gt: ?1 } }")
+    @Query("{'roomId': ?0, $or: [{'startTime': {$lt: ?2, $gte: ?1}}, {'endTime': {$lte: ?2, $gt: ?1}}, {'startTime': {$lte: ?1}, 'endTime': {$gte: ?2}}]}")
     List<Booking> findConflictingBookings(String roomId, LocalDateTime startTime, LocalDateTime endTime);
 
     @Query("{ 'userId': ?0, 'roomId': ?1, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
