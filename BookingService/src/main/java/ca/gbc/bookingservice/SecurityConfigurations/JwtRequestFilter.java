@@ -1,3 +1,4 @@
+
 package ca.gbc.bookingservice.SecurityConfigurations;
 
 import jakarta.servlet.FilterChain;

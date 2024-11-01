@@ -23,8 +23,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
 
-    public boolean hasConflictingBooking(String roomId, LocalDateTime startTime, LocalDateTime endTime) {
-        List<Booking> conflictingBookings = bookingRepository.findConflictingBookings(roomId, startTime, endTime);
+    public boolean hasConflictingBooking(String userId, String roomId, LocalDateTime startTime, LocalDateTime endTime) {
+        List<Booking> conflictingBookings = bookingRepository.findConflictingBookingsByUser(userId, roomId, startTime, endTime);
         return !conflictingBookings.isEmpty();
     }
 
@@ -33,9 +33,9 @@ public class BookingServiceImpl implements BookingService {
         // Validate room availability
         validateRoom(bookingRequest.roomId());
 
-        // Check for conflicting bookings
-        if (hasConflictingBooking(bookingRequest.roomId(), bookingRequest.startTime(), bookingRequest.endTime())) {
-            throw new IllegalArgumentException("Conflicting booking exists ");
+        // Check for conflicting bookings by user and room
+        if (hasConflictingBooking(userId, bookingRequest.roomId(), bookingRequest.startTime(), bookingRequest.endTime())) {
+            throw new IllegalArgumentException("You already have a conflicting booking for this room at the selected time.");
         }
 
         // Create and save new booking
@@ -45,6 +45,7 @@ public class BookingServiceImpl implements BookingService {
 
         return toResponse(savedBooking);
     }
+
 
     @Override
     public BookingResponse getBookingById(String id) {

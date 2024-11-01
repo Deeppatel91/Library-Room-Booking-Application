@@ -19,12 +19,14 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
+
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(@RequestBody BookingRequest bookingRequest, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
-        BookingResponse booking = bookingService.createBooking(bookingRequest, userId);
+        String userIdFromToken = (String) authentication.getPrincipal();
+        BookingResponse booking = bookingService.createBooking(bookingRequest, userIdFromToken);
         return ResponseEntity.ok(booking);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<BookingResponse> getBookingById(@PathVariable String id) {
@@ -32,7 +34,7 @@ public class BookingController {
         return ResponseEntity.ok(booking);
     }
 
-    @GetMapping
+    @GetMapping("/")
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }

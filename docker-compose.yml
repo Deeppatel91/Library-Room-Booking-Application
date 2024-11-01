@@ -1,5 +1,5 @@
 version: '3.9'
-
+#docker-compose -p eventservice-21_comp3095 -f docker-compose.yml up -d --build
 services:
   room-service:
     build:
