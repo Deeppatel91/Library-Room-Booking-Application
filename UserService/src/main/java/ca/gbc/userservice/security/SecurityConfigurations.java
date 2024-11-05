@@ -1,6 +1,5 @@
 package ca.gbc.userservice.security;
 
-import ca.gbc.userservice.service.UsersInformationImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,11 +17,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfigurations {
 
     private final JwtRequestFilter jwtRequestFilter;
-    private final UsersInformationImpl userDetailsService;
 
-    public SecurityConfigurations(JwtRequestFilter jwtRequestFilter, UsersInformationImpl userDetailsService) {
+    public SecurityConfigurations(JwtRequestFilter jwtRequestFilter) {
         this.jwtRequestFilter = jwtRequestFilter;
-        this.userDetailsService = userDetailsService;
     }
 
     @Bean
@@ -30,8 +27,7 @@ public class SecurityConfigurations {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/login").permitAll()
-                        .requestMatchers("/api/users/init").permitAll()
+                        .requestMatchers("/api/users/login", "/api/users/init").permitAll()
                         .requestMatchers("/api/users/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -42,8 +38,6 @@ public class SecurityConfigurations {
 
         return http.build();
     }
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

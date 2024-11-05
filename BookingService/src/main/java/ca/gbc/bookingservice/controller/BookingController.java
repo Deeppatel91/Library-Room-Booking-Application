@@ -43,7 +43,7 @@ public class BookingController {
         return ResponseEntity.ok(booking);
     }
 
-    @GetMapping("/")
+    @GetMapping("/all")
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }

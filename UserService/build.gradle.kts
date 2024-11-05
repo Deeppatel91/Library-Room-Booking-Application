@@ -55,6 +55,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:mongodb")
+    testImplementation("org.testcontainers:postgresql") // Add this line for PostgreSQL Testcontainers
+    testImplementation("io.rest-assured:rest-assured") // For API testing using RestAssured
 
     // JUnit Platform for running tests
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

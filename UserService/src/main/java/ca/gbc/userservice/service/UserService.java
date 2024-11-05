@@ -21,4 +21,6 @@ public interface UserService{
     boolean noAdminExists();
 
     Object changeUserRole(Long userId, String name);
+
+    Roles getUserRole(String organizerId);
 }

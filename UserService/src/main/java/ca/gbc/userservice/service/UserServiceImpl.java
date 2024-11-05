@@ -117,6 +117,13 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
+    @Override
+    public Roles getUserRole(String organizerId) {
+        Users user = usersRepository.findById(Long.parseLong(organizerId))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getRole();
+    }
+
 
     // Utility Method to Map Users to UserResponse DTO
     private UserResponse mapToResponse(Users user) {

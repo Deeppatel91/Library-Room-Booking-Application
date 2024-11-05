@@ -56,6 +56,42 @@ services:
     networks:
       - spring
 
+  event-service:
+    build:
+      context: ./EventService
+      dockerfile: Dockerfile
+    container_name: event-service
+    ports:
+      - "8062:8062"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/EventService?authSource=admin
+      JWT_SECRET: "5367566B5970743373367639792F423F4528482B4D6251655468576D5A713474"
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - spring
+
+  approval-service:
+    build:
+      context: ./ApprovalService
+      dockerfile: Dockerfile
+    container_name: approval-service
+    ports:
+      - "8064:8064"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/ApprovalService?authSource=admin
+      JWT_SECRET: "5367566B5970743373367639792F423F4528482B4D6251655468576D5A713474"
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - spring
+
   postgres:
     image: postgres:latest
     container_name: postgres

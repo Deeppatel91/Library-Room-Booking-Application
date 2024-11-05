@@ -20,6 +20,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -65,10 +67,27 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
-        var userResponse = userService.getUserById(userId);
+    public ResponseEntity<UserResponse> getUserById(
+            @PathVariable Long userId,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : authorizationHeader;
+        Optional<Users> optionalUser = usersRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        UserDetails userDetails = userService.loadUserByUsername(optionalUser.get().getEmail());
+        if (!jwtTokenProvider.validateToken(token, userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+
+        UserResponse userResponse = userService.getUserById(userId);
         return ResponseEntity.ok(userResponse);
     }
+
+
 
     @PutMapping("/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
