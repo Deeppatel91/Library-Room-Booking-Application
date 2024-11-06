@@ -16,4 +16,6 @@ public interface ApprovalService {
     void deleteApproval(String id);
 
     List<ApprovalResponse> getApprovalsForEvent(String eventId);
+
+    ApprovalResponse updateApproval(String id, ApprovalRequest request, String token);
 }

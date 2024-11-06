@@ -32,6 +32,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    testImplementation("org.springframework.security:spring-security-test")
+
+    testImplementation("io.rest-assured:rest-assured:5.3.0")
 
     // JWT Support
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")

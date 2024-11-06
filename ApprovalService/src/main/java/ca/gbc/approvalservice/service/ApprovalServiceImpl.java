@@ -83,6 +83,34 @@ public class ApprovalServiceImpl implements ApprovalService {
                 });
         return mapToResponseDTO(approval);
     }
+    @Override
+    public ApprovalResponse updateApproval(String id, ApprovalRequest request, String token) {
+        log.info("Updating approval with ID: {}", id);
+
+        // Ensure token is formatted correctly for authentication
+        String formattedToken = formatBearerToken(token);
+
+        // Find the existing approval or throw an exception if not found
+        Approval existingApproval = approvalRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Approval with ID {} not found", id);
+                    return new IllegalArgumentException("Approval not found");
+                });
+
+        // Update the fields with the new data from the request
+        existingApproval.setStatus(request.status());
+        existingApproval.setComment(request.comment());
+        existingApproval.setApprovedAt(LocalDateTime.now()); // Update the approval timestamp
+
+        // Save the updated approval entity
+        Approval updatedApproval = approvalRepository.save(existingApproval);
+
+        log.info("Approval with ID {} updated successfully", id);
+
+        // Return the updated approval details as a response DTO
+        return mapToResponseDTO(updatedApproval);
+    }
+
 
     @Override
     public List<ApprovalResponse> getAllApprovals() {

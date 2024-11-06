@@ -43,7 +43,15 @@ dependencies {
 
     // DevTools
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    // Testing
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:mongodb")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    // RestAssured for API testing
+    testImplementation("io.rest-assured:rest-assured:5.3.0")
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")

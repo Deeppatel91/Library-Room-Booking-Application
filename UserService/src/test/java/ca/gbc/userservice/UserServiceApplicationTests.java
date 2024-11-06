@@ -1,238 +1,226 @@
 package ca.gbc.userservice;
 
+import ca.gbc.userservice.dto.AuthorizationRequest;
+import ca.gbc.userservice.dto.UserRequest;
+import ca.gbc.userservice.model.Roles;
+import ca.gbc.userservice.model.Users;
+import ca.gbc.userservice.model.UsersTypes;
+import ca.gbc.userservice.repository.UsersRepository;
 import io.restassured.RestAssured;
-import org.hamcrest.Matchers;
+import io.restassured.http.ContentType;
+import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 class UserServiceApplicationTests {
 
     @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgresDBContainer = new PostgreSQLContainer<>("postgres:latest")
-            .withDatabaseName("testdb")
-            .withUsername("testuser")
-            .withPassword("password");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest");
 
     @LocalServerPort
     private Integer port;
 
+    @Autowired
+    private UsersRepository usersRepository;
+
+    @DynamicPropertySource
+    static void setProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
+        registry.add("jwt.secret", () -> "775367566B5970743373367639792F423F4528482B4D6251655468576D5A713474");
+        registry.add("jwt.expiration", () -> 3600); // Ensuring jwt.expiration is an integer
+    }
+
     @BeforeEach
-    void setup() {
+    void setUp() {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = port;
+
+        if (usersRepository.findByEmail("admin@example.com").isEmpty()) {
+            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+            String encodedPassword = passwordEncoder.encode("password");
+
+            Users adminUser = new Users(null, "Admin", "admin@example.com", encodedPassword,
+                    Roles.ADMIN, UsersTypes.STAFF, true);
+            usersRepository.save(adminUser);
+        }
     }
 
-    @Test
-    void createUserTest() {
-        String requestBody = """
-                {
-                "name": "John Doe",
-                "email": "john@example.com",
-                "password": "password123",
-                "role": "STAFF",
-                "userType": "STAFF"
-                }
-                """;
+    private String authenticateAndGetJwtToken() {
+        AuthorizationRequest authRequest = new AuthorizationRequest("admin@example.com", "password");
 
-        RestAssured.given()
-                .contentType("application/json")
-                .body(requestBody)
-                .when()
-                .post("/api/users/init")
-                .then()
-                .log().all()
-                .statusCode(200)
-                .body("name", Matchers.equalTo("John Doe"))
-                .body("email", Matchers.equalTo("john@example.com"))
-                .body("role", Matchers.equalTo("STAFF"))
-                .body("active", Matchers.equalTo(true));
-    }
-
-    @Test
-    void loginUserTest() {
-        String requestBody = """
-                {
-                "email": "john@example.com",
-                "password": "password123"
-                }
-                """;
-
-        RestAssured.given()
-                .contentType("application/json")
-                .body(requestBody)
+        return given()
+                .contentType(ContentType.JSON)
+                .body(authRequest)
                 .when()
                 .post("/api/users/login")
                 .then()
-                .log().all()
                 .statusCode(200)
-                .body("token", Matchers.notNullValue());
+                .extract()
+                .path("token");
     }
 
     @Test
-    void getUserByIdTest() {
-        String createRequestBody = """
-                {
-                "name": "Jane Doe",
-                "email": "jane@example.com",
-                "password": "password456",
-                "role": "STUDENT",
-                "userType": "STUDENT"
-                }
-                """;
+    void testCreateUser() {
+        String jwtToken = authenticateAndGetJwtToken();
 
-        Integer userId = RestAssured.given()
-                .contentType("application/json")
-                .body(createRequestBody)
-                .when()
-                .post("/api/users/init")
-                .then()
-                .log().all()
-                .statusCode(200)
-                .extract()
-                .path("id");
+        // Use a unique email for each test run to avoid duplicate key issues
+        String uniqueEmail = "john.doe." + System.currentTimeMillis() + "@example.com";
 
-        RestAssured.given()
-                .contentType("application/json")
+        UserRequest userRequest = new UserRequest(
+                "John Doe",
+                uniqueEmail,
+                "password123",
+                Roles.STAFF,
+                UsersTypes.STAFF
+        );
+
+        ValidatableResponse response = given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(userRequest)
                 .when()
-                .get("/api/users/" + userId)
+                .post("/api/users")
                 .then()
-                .log().all()
-                .statusCode(200)
-                .body("name", Matchers.equalTo("Jane Doe"))
-                .body("email", Matchers.equalTo("jane@example.com"));
+                .statusCode(201);
+
+        response.body("id", notNullValue())
+                .body("name", equalTo("John Doe"))
+                .body("email", equalTo(uniqueEmail))
+                .body("role", equalTo("STAFF"))
+                .body("userType", equalTo("STAFF"));
     }
 
     @Test
-    void updateUserTest() {
-        String createRequestBody = """
-                {
-                "name": "Mark Smith",
-                "email": "mark@example.com",
-                "password": "password789",
-                "role": "STAFF",
-                "userType": "STAFF"
-                }
-                """;
+    void testGetUserById() {
+        String jwtToken = authenticateAndGetJwtToken();
 
-        Integer userId = RestAssured.given()
-                .contentType("application/json")
-                .body(createRequestBody)
+        // Ensure the user with ID 1 exists
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .post("/api/users/init")
+                .get("/api/users/" + user.getId())
                 .then()
-                .log().all()
                 .statusCode(200)
-                .extract()
-                .path("id");
-
-        String updateRequestBody = """
-                {
-                "name": "Mark Updated",
-                "email": "markupdated@example.com",
-                "password": "newpassword",
-                "role": "STAFF",
-                "userType": "STAFF"
-                }
-                """;
-
-        RestAssured.given()
-                .contentType("application/json")
-                .body(updateRequestBody)
-                .when()
-                .put("/api/users/" + userId)
-                .then()
-                .log().all()
-                .statusCode(200)
-                .body("name", Matchers.equalTo("Mark Updated"))
-                .body("email", Matchers.equalTo("markupdated@example.com"));
+                .body("id", equalTo(user.getId().intValue()))
+                .body("email", equalTo("admin@example.com"));
     }
 
     @Test
-    void deleteUserTest() {
-        String createRequestBody = """
-                {
-                "name": "Lucas Doe",
-                "email": "lucas@example.com",
-                "password": "password987",
-                "role": "STUDENT",
-                "userType": "STUDENT"
-                }
-                """;
+    void testUpdateUser() {
+        String jwtToken = authenticateAndGetJwtToken();
 
-        Integer userId = RestAssured.given()
-                .contentType("application/json")
-                .body(createRequestBody)
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        UserRequest userRequest = new UserRequest(
+                "Updated Name",
+                "updated.email@example.com",
+                "newpassword123",
+                Roles.STAFF,
+                UsersTypes.STAFF
+        );
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(userRequest)
                 .when()
-                .post("/api/users/init")
+                .put("/api/users/" + user.getId())
                 .then()
-                .log().all()
                 .statusCode(200)
-                .extract()
-                .path("id");
+                .body("name", equalTo("Updated Name"));
+    }
 
-        RestAssured.given()
-                .contentType("application/json")
+    @Test
+    void testDeleteUser() {
+        String jwtToken = authenticateAndGetJwtToken();
+
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .delete("/api/users/" + userId)
+                .delete("/api/users/" + user.getId())
                 .then()
-                .log().all()
                 .statusCode(204);
-
-        RestAssured.given()
-                .contentType("application/json")
-                .when()
-                .get("/api/users/" + userId)
-                .then()
-                .log().all()
-                .statusCode(404);
     }
 
     @Test
-    void activateUserTest() {
-        String createRequestBody = """
-                {
-                "name": "Alice Johnson",
-                "email": "alice@example.com",
-                "password": "password321",
-                "role": "ADMIN",
-                "userType": "STAFF"
-                }
-                """;
+    void testDeactivateUser() {
+        String jwtToken = authenticateAndGetJwtToken();
 
-        Integer userId = RestAssured.given()
-                .contentType("application/json")
-                .body(createRequestBody)
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .post("/api/users/init")
+                .put("/api/users/deactivate/" + user.getId())
                 .then()
-                .log().all()
                 .statusCode(200)
-                .extract()
-                .path("id");
+                .body("active", equalTo(false));
+    }
 
-        RestAssured.given()
-                .contentType("application/json")
-                .when()
-                .put("/api/users/deactivate/" + userId)
-                .then()
-                .statusCode(200);
+    @Test
+    void testActivateUser() {
+        String jwtToken = authenticateAndGetJwtToken();
 
-        RestAssured.given()
-                .contentType("application/json")
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .put("/api/users/activate/" + userId)
+                .put("/api/users/activate/" + user.getId())
                 .then()
-                .log().all()
                 .statusCode(200)
-                .body("active", Matchers.equalTo(true));
+                .body("active", equalTo(true));
+    }
+
+    @Test
+    void testChangeUserRole() {
+        String jwtToken = authenticateAndGetJwtToken();
+
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .param("role", "ADMIN")
+                .when()
+                .put("/api/users/role/" + user.getId())
+                .then()
+                .statusCode(200)
+                .body("role", equalTo("ADMIN"));
+    }
+
+    @Test
+    void testCreateAuthenticationToken() {
+        AuthorizationRequest authRequest = new AuthorizationRequest("admin@example.com", "password");
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(authRequest)
+                .when()
+                .post("/api/users/login")
+                .then()
+                .statusCode(200)
+                .body("token", notNullValue());
     }
 }

@@ -26,11 +26,15 @@ public class ApprovalController {
         return ResponseEntity.ok(approvalService.getApprovalById(id));
     }
 
-
-
     @GetMapping("/all")
     public ResponseEntity<List<ApprovalResponse>> getAllApprovals() {
         return ResponseEntity.ok(approvalService.getAllApprovals());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApprovalResponse> updateApproval(@PathVariable String id, @RequestBody ApprovalRequest request, @RequestHeader("Authorization") String token) {
+        ApprovalResponse updatedApproval = approvalService.updateApproval(id, request, token);
+        return ResponseEntity.ok(updatedApproval);
     }
 
     @DeleteMapping("/{id}")
