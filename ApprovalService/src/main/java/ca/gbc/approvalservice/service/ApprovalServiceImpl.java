@@ -1,3 +1,4 @@
+
 package ca.gbc.approvalservice.service;
 
 import ca.gbc.approvalservice.dto.ApprovalRequest;
@@ -87,27 +88,44 @@ public class ApprovalServiceImpl implements ApprovalService {
     public ApprovalResponse updateApproval(String id, ApprovalRequest request, String token) {
         log.info("Updating approval with ID: {}", id);
 
-        // Ensure token is formatted correctly for authentication
         String formattedToken = formatBearerToken(token);
 
-        // Find the existing approval or throw an exception if not found
-        Approval existingApproval = approvalRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Approval with ID {} not found", id);
-                    return new IllegalArgumentException("Approval not found");
-                });
+        User approver;
+        try {
+            approver = userServiceFeignClient.getUserById(request.approverId(), formattedToken);
+            if (approver == null || !"STAFF".equalsIgnoreCase(approver.role())) {
+                log.error("User with ID {} does not have permission to update approvals", request.approverId());
+                throw new SecurityException("Only STAFF users are allowed to update approvals.");
+            }
+        } catch (Exception e) {
+            log.error("Error validating approver ID {}: {}", request.approverId(), e.getMessage());
+            throw new SecurityException("Approver validation failed: " + e.getMessage());
+        }
 
-        // Update the fields with the new data from the request
+        Approval existingApproval;
+        try {
+            existingApproval = approvalRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Approval not found"));
+        } catch (Exception e) {
+            log.error("Error fetching approval with ID {}: {}", id, e.getMessage());
+            throw new IllegalArgumentException("Error finding approval with ID: " + id);
+        }
+
+        // Update approval fields
         existingApproval.setStatus(request.status());
         existingApproval.setComment(request.comment());
-        existingApproval.setApprovedAt(LocalDateTime.now()); // Update the approval timestamp
+        existingApproval.setApprovedAt(LocalDateTime.now());
 
-        // Save the updated approval entity
-        Approval updatedApproval = approvalRepository.save(existingApproval);
+        // Save the updated approval
+        Approval updatedApproval;
+        try {
+            updatedApproval = approvalRepository.save(existingApproval);
+        } catch (Exception e) {
+            log.error("Error saving updated approval: {}", e.getMessage());
+            throw new RuntimeException("Failed to save updated approval");
+        }
 
-        log.info("Approval with ID {} updated successfully", id);
-
-        // Return the updated approval details as a response DTO
+        log.info("Approval with ID {} updated successfully by staff {}", id, request.approverId());
         return mapToResponseDTO(updatedApproval);
     }
 
