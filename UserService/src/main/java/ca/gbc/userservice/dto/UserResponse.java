@@ -15,8 +15,8 @@ public class UserResponse {
     private Long id;
     private String name;
     private String email;
-    private Roles role;  // e.g., "student", "staff", "faculty"
-    private UsersTypes userType;  // e.g., "student", "staff", "faculty"
+    private Roles role;
+    private UsersTypes userType;
     private boolean active;
 
 

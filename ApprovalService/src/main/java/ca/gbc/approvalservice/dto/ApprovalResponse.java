@@ -6,7 +6,7 @@ public record ApprovalResponse(
         String id,
         String eventId,
         String approverId,
-        String status,  // "APPROVED" or "REJECTED"
+        String status,
         String comment,
         LocalDateTime approvedAt
 ) {

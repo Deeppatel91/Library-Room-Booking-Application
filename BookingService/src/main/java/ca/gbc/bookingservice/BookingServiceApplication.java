@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@EnableFeignClients(basePackages = "ca.gbc.bookingservice.Transporter")
+@EnableFeignClients(basePackages = "ca.gbc.bookingservice.Client")
 @SpringBootApplication
 public class BookingServiceApplication {
 	public static void main(String[] args) {

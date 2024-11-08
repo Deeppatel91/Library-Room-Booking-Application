@@ -26,7 +26,7 @@ public class Users {
     @Column(nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)  // Apply here for the field
+    @Enumerated(EnumType.STRING)
     private Roles role;
 
     @Enumerated(EnumType.STRING)

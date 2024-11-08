@@ -5,5 +5,6 @@ public enum UsersTypes {
     FACULTY,
     STUDENT,
 
+
     ADMIN
 }

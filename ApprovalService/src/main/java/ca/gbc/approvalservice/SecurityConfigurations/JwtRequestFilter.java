@@ -33,11 +33,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String jwt = authorizationHeader.substring(7).trim();
 
-            String userId = jwtTokenProvider.extractUserId(jwt); // Extract userId directly
+            String userId = jwtTokenProvider.extractUserId(jwt);
 
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userId, jwt, null); // Set userId as principal
+                        userId, jwt, null);
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
                 log.info("JWT token successfully set in SecurityContext for userId: {}", userId);

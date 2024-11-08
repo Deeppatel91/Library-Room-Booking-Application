@@ -45,7 +45,7 @@ class UserServiceApplicationTests {
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
         registry.add("jwt.secret", () -> "775367566B5970743373367639792F423F4528482B4D6251655468576D5A713474");
-        registry.add("jwt.expiration", () -> 3600); // Ensuring jwt.expiration is an integer
+        registry.add("jwt.expiration", () -> 3600);
     }
 
     @BeforeEach
@@ -80,8 +80,6 @@ class UserServiceApplicationTests {
     @Test
     void testCreateUser() {
         String jwtToken = authenticateAndGetJwtToken();
-
-        // Use a unique email for each test run to avoid duplicate key issues
         String uniqueEmail = "john.doe." + System.currentTimeMillis() + "@example.com";
 
         UserRequest userRequest = new UserRequest(
@@ -111,8 +109,6 @@ class UserServiceApplicationTests {
     @Test
     void testGetUserById() {
         String jwtToken = authenticateAndGetJwtToken();
-
-        // Ensure the user with ID 1 exists
         Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
 
         given()
@@ -179,20 +175,7 @@ class UserServiceApplicationTests {
                 .body("active", equalTo(false));
     }
 
-    @Test
-    void testActivateUser() {
-        String jwtToken = authenticateAndGetJwtToken();
 
-        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
-
-        given()
-                .header("Authorization", "Bearer " + jwtToken)
-                .when()
-                .put("/api/users/activate/" + user.getId())
-                .then()
-                .statusCode(200)
-                .body("active", equalTo(true));
-    }
 
     @Test
     void testChangeUserRole() {
@@ -208,6 +191,20 @@ class UserServiceApplicationTests {
                 .then()
                 .statusCode(200)
                 .body("role", equalTo("ADMIN"));
+    }
+    @Test
+    void testActivateUser() {
+        String jwtToken = authenticateAndGetJwtToken();
+
+        Users user = usersRepository.findByEmail("admin@example.com").orElseThrow();
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .when()
+                .put("/api/users/activate/" + user.getId())
+                .then()
+                .statusCode(200)
+                .body("active", equalTo(true));
     }
 
     @Test

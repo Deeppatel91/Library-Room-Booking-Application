@@ -67,7 +67,7 @@ public class JwtTokenProvider {
             return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
         } catch (io.jsonwebtoken.JwtException e) {
             log.error("Error parsing JWT token: {}", e.getMessage());
-            throw e; // Re-throw to be handled in JwtRequestFilter
+            throw e;
         }
     }
 

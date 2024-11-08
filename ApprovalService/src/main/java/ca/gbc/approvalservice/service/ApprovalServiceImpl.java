@@ -28,8 +28,6 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     public ApprovalResponse approveEvent(ApprovalRequest request, String token) {
         log.info("Approving event with ID: {}", request.eventId());
-
-        // Ensure token is trimmed and prefixed correctly
         String formattedToken = formatBearerToken(token);
 
         Event event;
@@ -57,17 +55,14 @@ public class ApprovalServiceImpl implements ApprovalService {
             log.error("User with ID {} does not have approval permissions", request.approverId());
             throw new SecurityException("Approver does not have permission to approve events");
         }
-
         Approval approval = new Approval();
         approval.setEventId(request.eventId());
         approval.setApproverId(request.approverId());
         approval.setStatus(request.status());
         approval.setComment(request.comment());
         approval.setApprovedAt(LocalDateTime.now());
-
         approval = approvalRepository.save(approval);
         log.info("Event with ID {} approved successfully by user {}", request.eventId(), request.approverId());
-
         return mapToResponseDTO(approval);
     }
 
@@ -110,13 +105,9 @@ public class ApprovalServiceImpl implements ApprovalService {
             log.error("Error fetching approval with ID {}: {}", id, e.getMessage());
             throw new IllegalArgumentException("Error finding approval with ID: " + id);
         }
-
-        // Update approval fields
         existingApproval.setStatus(request.status());
         existingApproval.setComment(request.comment());
         existingApproval.setApprovedAt(LocalDateTime.now());
-
-        // Save the updated approval
         Approval updatedApproval;
         try {
             updatedApproval = approvalRepository.save(existingApproval);

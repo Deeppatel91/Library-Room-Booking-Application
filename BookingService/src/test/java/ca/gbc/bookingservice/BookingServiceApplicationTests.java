@@ -1,6 +1,6 @@
 package ca.gbc.bookingservice;
 
-import ca.gbc.bookingservice.Transporter.RoomServiceFeignClient;
+import ca.gbc.bookingservice.Client.RoomServiceFeignClient;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.model.Booking;
 import ca.gbc.bookingservice.repository.BookingRepository;
@@ -57,7 +57,7 @@ class BookingServiceApplicationTests {
     void setUp() {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = port;
-        bookingRepository.deleteAll();  // Clear all bookings for test isolation
+        bookingRepository.deleteAll();
 
         Mockito.when(roomServiceFeignClient.getRoomById(Mockito.anyString())).thenReturn("Available");
     }
@@ -67,7 +67,7 @@ class BookingServiceApplicationTests {
         return Jwts.builder()
                 .setSubject(userId)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000)) // 1-hour expiration
+                .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000))
                 .signWith(Keys.hmacShaKeyFor(keyBytes), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -143,7 +143,7 @@ class BookingServiceApplicationTests {
                 .get("/api/bookings/all")
                 .then()
                 .statusCode(200)
-                .body("size()", greaterThan(1)); // This checks if the size of the list in the response is greater than 1
+                .body("size()", greaterThan(1));
     }
 
     @Test

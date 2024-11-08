@@ -50,14 +50,14 @@ class ApprovalServiceApplicationTests {
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
         registry.add("jwt.secret", () -> "775367566B5970743373367639792F423F4528482B4D6251655468576D5A713474");
-        registry.add("jwt.expiration", () -> "86400000"); // 24 hours in milliseconds
+        registry.add("jwt.expiration", () -> "86400000");
     }
 
     @BeforeEach
     void setUp() {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = port;
-        RestAssured.defaultParser = Parser.JSON; // Set JSON as the default parser
+        RestAssured.defaultParser = Parser.JSON;
     }
 
     private String generateJwtToken(String userId, String role) {
@@ -70,12 +70,11 @@ class ApprovalServiceApplicationTests {
                 .setClaims(claims)
                 .setSubject(userId)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000)) // 1-hour expiration
+                .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000))
                 .signWith(Keys.hmacShaKeyFor(keyBytes), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // Utility method to convert hex string to byte array
     private byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
@@ -88,7 +87,7 @@ class ApprovalServiceApplicationTests {
 
     @Test
     void testApproveEvent() {
-        // Use "STAFF" role here as specified
+
         String jwtToken = generateJwtToken("admin123", "STAFF");
 
         ApprovalRequest approvalRequest = new ApprovalRequest("event123", "admin123", "APPROVED", "Approval Comment");
@@ -128,6 +127,25 @@ class ApprovalServiceApplicationTests {
     }
 
     @Test
+    void testUpdateApproval() {
+        String jwtToken = generateJwtToken("admin123", "STAFF");
+
+        ApprovalRequest updateRequest = new ApprovalRequest("event123", "admin123", "REJECTED", "Updated Comment");
+        ApprovalResponse mockUpdatedResponse = new ApprovalResponse("approvalId", "event123", "admin123", "REJECTED", "Updated Comment", LocalDateTime.now());
+
+        Mockito.when(approvalService.updateApproval("approvalId", updateRequest, jwtToken)).thenReturn(mockUpdatedResponse);
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(updateRequest)
+                .when()
+                .put("/api/approvals/approvalId")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
     void testGetAllApprovals() {
         String jwtToken = generateJwtToken("admin123", "STAFF");
 
@@ -147,24 +165,7 @@ class ApprovalServiceApplicationTests {
                 .contentType(ContentType.JSON);
     }
 
-    @Test
-    void testUpdateApproval() {
-        String jwtToken = generateJwtToken("admin123", "STAFF");
 
-        ApprovalRequest updateRequest = new ApprovalRequest("event123", "admin123", "REJECTED", "Updated Comment");
-        ApprovalResponse mockUpdatedResponse = new ApprovalResponse("approvalId", "event123", "admin123", "REJECTED", "Updated Comment", LocalDateTime.now());
-
-        Mockito.when(approvalService.updateApproval("approvalId", updateRequest, jwtToken)).thenReturn(mockUpdatedResponse);
-
-        given()
-                .header("Authorization", "Bearer " + jwtToken)
-                .contentType(ContentType.JSON)
-                .body(updateRequest)
-                .when()
-                .put("/api/approvals/approvalId")
-                .then()
-                .statusCode(200);
-    }
 
     @Test
     void testDeleteApproval() {

@@ -15,6 +15,6 @@ public class UserRequest {
     private String name;
     private String email;
     private String password;
-    private Roles role;  // e.g., "student", "staff", "faculty"
-    private UsersTypes userType;  // e.g., "student", "staff", "faculty"
+    private Roles role;
+    private UsersTypes userType;
 }

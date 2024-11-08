@@ -18,7 +18,6 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
 
-    // Create a new room
     @Override
     public RoomResponse createRoom(RoomRequest roomRequest) {
         Room room = Room.builder()
@@ -32,7 +31,6 @@ public class RoomServiceImpl implements RoomService {
         return mapToRoomResponse(savedRoom);
     }
 
-    // Get all rooms
     @Override
     public List<RoomResponse> getAllRooms() {
         return roomRepository.findAll()
@@ -41,7 +39,6 @@ public class RoomServiceImpl implements RoomService {
                 .collect(Collectors.toList());
     }
 
-    // Get a room by ID
     @Override
     public RoomResponse getRoomById(Long id) {
         Room room = roomRepository.findById(id)
@@ -49,8 +46,6 @@ public class RoomServiceImpl implements RoomService {
         return mapToRoomResponse(room);
     }
 
-
-    // Update a room
     @Override
     public RoomResponse updateRoom(Long id, RoomRequest roomRequest) {
         Room existingRoom = roomRepository.findById(id)
@@ -65,7 +60,6 @@ public class RoomServiceImpl implements RoomService {
         return mapToRoomResponse(updatedRoom);
     }
 
-    // Delete a room
     @Override
     public void deleteRoom(Long id) {
         Room room = roomRepository.findById(id)
@@ -73,7 +67,6 @@ public class RoomServiceImpl implements RoomService {
         roomRepository.delete(room);
     }
 
-    // Get available rooms for booking
     @Override
     public List<RoomResponse> getAvailableRooms() {
         return roomRepository.findByAvailableTrue()
@@ -82,7 +75,6 @@ public class RoomServiceImpl implements RoomService {
                 .collect(Collectors.toList());
     }
 
-    // Helper method to map Room entity to RoomResponse DTO
     private RoomResponse mapToRoomResponse(Room room) {
         return RoomResponse.builder()
                 .id(room.getId())

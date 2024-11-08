@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RoomResponse {
 
-    private Long id;            // The unique identifier for the room
-    private String roomName;    // The name of the room
-    private Integer capacity;   // The capacity of the room
-    private String features;    // Comma-separated string of features
-    private Boolean available;  // Availability status of the room
+    private Long id;
+    private String roomName;
+    private Integer capacity;
+    private String features;
+    private Boolean available;
 }

@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
-@EnableFeignClients // Enables Feign clients for inter-service communication
+@EnableFeignClients
 public class EventServiceApplication {
 
     public static void main(String[] args) {

@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface ApprovalRepository extends MongoRepository<Approval, String> {
 
-    // Custom query method to find an approval by event ID
     Optional<Approval> findByEventId(String eventId);
 }

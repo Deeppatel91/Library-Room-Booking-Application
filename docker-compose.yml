@@ -1,5 +1,5 @@
+#docker-compose -p gbc_eventbooking-21 -f docker-compose.yml up -d --build
 version: '3.9'
-#docker-compose -p eventservice-21_comp3095 -f docker-compose.yml up -d --build
 services:
   room-service:
     build:
@@ -98,7 +98,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: RoomService  # Default database; others can be created manually
+      POSTGRES_DB: RoomService
     ports:
       - "5432:5432"
     volumes:

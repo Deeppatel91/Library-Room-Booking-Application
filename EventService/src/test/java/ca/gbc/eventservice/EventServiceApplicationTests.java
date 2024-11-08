@@ -1,7 +1,7 @@
 package ca.gbc.eventservice;
 
-import ca.gbc.eventservice.Transporter.BookingServiceFeignClient;
-import ca.gbc.eventservice.Transporter.UserServiceFeignClient;
+import ca.gbc.eventservice.Client.BookingServiceFeignClient;
+import ca.gbc.eventservice.Client.UserServiceFeignClient;
 import ca.gbc.eventservice.dto.Bookings;
 import ca.gbc.eventservice.dto.EventRequest;
 import ca.gbc.eventservice.dto.EventResponse;
@@ -57,7 +57,7 @@ class EventServiceApplicationTests {
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
         registry.add("jwt.secret", () -> "775367566B5970743373367639792F423F4528482B4D6251655468576D5A713474");
-        registry.add("jwt.expiration", () -> "86400000"); // 24 hours in milliseconds
+        registry.add("jwt.expiration", () -> "86400000");
     }
 
     @BeforeEach
@@ -65,8 +65,6 @@ class EventServiceApplicationTests {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = port;
         eventRepository.deleteAll();
-
-        // Mock responses for BookingService and UserService
         Mockito.when(bookingServiceFeignClient.getBookingById(Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(new Bookings("bookingId", "organizer123@example.com", "roomId"));
         Mockito.when(userServiceFeignClient.getUserById(Mockito.anyString(), Mockito.anyString()))
@@ -83,7 +81,7 @@ class EventServiceApplicationTests {
                 .setClaims(claims)
                 .setSubject(userId)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000)) // 1-hour expiration
+                .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000))
                 .signWith(Keys.hmacShaKeyFor(keyBytes), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -124,8 +122,6 @@ class EventServiceApplicationTests {
     @Test
     void testGetEventById() {
         String jwtToken = generateJwtToken("organizer123", "STAFF");
-
-        // First, create an event to retrieve later
         EventRequest eventRequest = new EventRequest("Sample Event", "Conference", "bookingId", 100);
         EventResponse eventResponse = given()
                 .header("Authorization", "Bearer " + jwtToken)
@@ -135,7 +131,7 @@ class EventServiceApplicationTests {
                 .post("/api/events")
                 .as(EventResponse.class);
 
-        String eventId = eventResponse.id(); // Corrected to `id()`
+        String eventId = eventResponse.id();
 
         given()
                 .header("Authorization", "Bearer " + jwtToken)
@@ -178,7 +174,7 @@ class EventServiceApplicationTests {
                 .contentType(ContentType.JSON)
                 .body(updateRequest)
                 .when()
-                .put("/api/events/" + createdEvent.id()) // Corrected to `id()`
+                .put("/api/events/" + createdEvent.id())
                 .then()
                 .statusCode(200)
                 .body("eventName", equalTo("Updated Event"));
@@ -200,7 +196,7 @@ class EventServiceApplicationTests {
         given()
                 .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .delete("/api/events/" + createdEvent.id()) // Corrected to `id()`
+                .delete("/api/events/" + createdEvent.id())
                 .then()
                 .statusCode(204);
     }

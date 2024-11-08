@@ -21,14 +21,14 @@ public class ApprovalController {
         return ResponseEntity.ok(approval);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApprovalResponse> getApprovalById(@PathVariable String id) {
-        return ResponseEntity.ok(approvalService.getApprovalById(id));
-    }
-
     @GetMapping("/all")
     public ResponseEntity<List<ApprovalResponse>> getAllApprovals() {
         return ResponseEntity.ok(approvalService.getAllApprovals());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApprovalResponse> getApprovalById(@PathVariable String id) {
+        return ResponseEntity.ok(approvalService.getApprovalById(id));
     }
 
     @PutMapping("/{id}")

@@ -30,13 +30,9 @@ public class BookingController {
             BookingResponse booking = bookingService.createBooking(bookingRequest, userIdFromToken);
             return ResponseEntity.ok(booking);
         } catch (IllegalArgumentException e) {
-            // Return 409 Conflict status with a custom error message
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
-
-
-
     @GetMapping("/{id}")
     public ResponseEntity<BookingResponse> getBookingById(@PathVariable String id) {
         BookingResponse booking = bookingService.getBookingById(id);

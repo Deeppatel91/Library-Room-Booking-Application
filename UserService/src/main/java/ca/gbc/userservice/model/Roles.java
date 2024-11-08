@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 public enum Roles {
     ADMIN,
     STAFF,
-    FACULTY,
-    STUDENT
+    STUDENT,
+    FACULTY
+
 }

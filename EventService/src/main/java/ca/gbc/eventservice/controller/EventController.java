@@ -22,7 +22,6 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // Create a new event
     @PostMapping
     public ResponseEntity<?> createEvent(@RequestBody EventRequest eventRequest, Authentication authentication) {
         String organizerId = getUserIdFromAuth(authentication);
@@ -34,8 +33,6 @@ public class EventController {
         }
     }
 
-    // Retrieve an event by ID
-    // Retrieve an event by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getEventById(@PathVariable String id) {
         log.info("Retrieving event with ID: {}", id);
@@ -52,15 +49,12 @@ public class EventController {
         }
     }
 
-
-    // Retrieve all events
     @GetMapping("/all")
     public ResponseEntity<List<EventResponse>> getAllEvents() {
         List<EventResponse> events = eventService.getAllEvents();
         return ResponseEntity.ok(events);
     }
 
-    // Update an event by ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updateEvent(@PathVariable String id, @RequestBody EventRequest eventRequest, Authentication authentication) {
         String organizerId = getUserIdFromAuth(authentication);
@@ -72,7 +66,6 @@ public class EventController {
         }
     }
 
-    // Delete an event by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEvent(@PathVariable String id, Authentication authentication) {
         String organizerId = getUserIdFromAuth(authentication);
@@ -84,7 +77,6 @@ public class EventController {
         }
     }
 
-    // Helper method to extract user ID from authentication
     private String getUserIdFromAuth(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() != null) {
             return authentication.getPrincipal().toString();

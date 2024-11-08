@@ -83,7 +83,7 @@ class RoomServiceApplicationTests {
                 .body("features", Matchers.equalTo("TV Screen, Sound System"))
                 .body("available", Matchers.equalTo(true));
 
-        // Get all rooms and check that the created room exists, regardless of order
+
         RestAssured.given()
                 .contentType("application/json")
                 .when()
@@ -97,7 +97,7 @@ class RoomServiceApplicationTests {
 
     @Test
     void updateRoomTest() {
-        // First, create a room and get its ID
+
         String createRequestBody = """
             {
             "roomName" : "Conference Room A",
@@ -107,7 +107,7 @@ class RoomServiceApplicationTests {
             }
             """;
 
-        // Extract the ID from the creation response
+
         Integer roomId = RestAssured.given()
                 .contentType("application/json")
                 .body(createRequestBody)
@@ -119,7 +119,7 @@ class RoomServiceApplicationTests {
                 .extract()
                 .path("id");
 
-        // Then, update the room using the extracted ID
+
         String updateRequestBody = """
             {
             "roomName" : "Updated Conference Room",
@@ -141,7 +141,7 @@ class RoomServiceApplicationTests {
 
     @Test
     void deleteRoomTest() {
-        // First, create a room and get its ID
+
         String createRequestBody = """
         {
         "roomName" : "Conference Room A",
@@ -162,7 +162,6 @@ class RoomServiceApplicationTests {
                 .extract()
                 .path("id");
 
-        // Then, delete the room
         RestAssured.given()
                 .contentType("application/json")
                 .when()
@@ -171,14 +170,13 @@ class RoomServiceApplicationTests {
                 .log().all()
                 .statusCode(204);
 
-        // Verify the room no longer exists
         RestAssured.given()
                 .contentType("application/json")
                 .when()
                 .get("/api/rooms/" + roomId)
                 .then()
                 .log().all()
-                .statusCode(404);  // Expecting a 404 Not Found after deletion
+                .statusCode(404);
     }
 
 }

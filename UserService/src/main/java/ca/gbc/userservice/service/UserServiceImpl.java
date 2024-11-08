@@ -23,18 +23,15 @@ public class UserServiceImpl implements UserService {
         this.usersRepository = usersRepository;
         this.passwordEncoder = passwordEncoder;
     }
-
-    // User Management Methods
     @Override
     public UserResponse createUser(UserRequest request) {
         Users user = new Users();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole()); // Use Roles enum directly
-        user.setUserType(request.getUserType()); // Use UsersTypes enum directly
-        user.setActive(true); // Default active status
-
+        user.setRole(request.getRole());
+        user.setUserType(request.getUserType());
+        user.setActive(true);
         Users savedUser = usersRepository.save(user);
         return mapToResponse(savedUser);
     }
@@ -42,20 +39,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(Long userId) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
         return mapToResponse(user);
     }
 
     @Override
     public UserResponse updateUser(Long userId, UserRequest request) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
 
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole()); // Use Roles enum directly
-        user.setUserType(request.getUserType()); // Use UsersTypes enum directly
+        user.setRole(request.getRole());
+        user.setUserType(request.getUserType());
 
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
@@ -66,11 +63,10 @@ public class UserServiceImpl implements UserService {
         usersRepository.deleteById(userId);
     }
 
-    // Admin Methods
     @Override
     public UserResponse deactivateUser(Long userId) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
         user.setActive(false);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
@@ -79,22 +75,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse activateUser(Long userId) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
         user.setActive(true);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
     }
 
     @Override
-    public UserResponse changeUserRole(Long userId, Roles role) { // Changed to accept Roles directly
+    public UserResponse changeUserRole(Long userId, Roles role) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
         user.setRole(role);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
     }
 
-    // UserDetailsService Method
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Users user = usersRepository.findByEmail(username)
@@ -120,12 +115,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public Roles getUserRole(String organizerId) {
         Users user = usersRepository.findById(Long.parseLong(organizerId))
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
         return user.getRole();
     }
-
-
-    // Utility Method to Map Users to UserResponse DTO
     private UserResponse mapToResponse(Users user) {
         return new UserResponse(
                 user.getId(),

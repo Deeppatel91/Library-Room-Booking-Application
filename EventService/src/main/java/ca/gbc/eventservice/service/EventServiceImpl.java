@@ -1,7 +1,7 @@
 package ca.gbc.eventservice.service;
 
-import ca.gbc.eventservice.Transporter.BookingServiceFeignClient;
-import ca.gbc.eventservice.Transporter.UserServiceFeignClient;
+import ca.gbc.eventservice.Client.BookingServiceFeignClient;
+import ca.gbc.eventservice.Client.UserServiceFeignClient;
 import ca.gbc.eventservice.dto.Bookings;
 import ca.gbc.eventservice.dto.EventRequest;
 import ca.gbc.eventservice.dto.EventResponse;
@@ -27,12 +27,13 @@ public class EventServiceImpl implements EventService {
     private final UserServiceFeignClient userServiceFeignClient;
     private final BookingServiceFeignClient bookingServiceFeignClient;
 
-    private static final Map<String, Integer> ROLE_MAX_ATTENDEES = Map.of(
+    private static final Map<String, Integer> MAX_ATTENDEES_PER_ROLE = Map.of(
             "ADMIN", 700,
             "STAFF", 400,
             "FACULTY", 300,
             "STUDENT", 50
     );
+
 
     @Override
     public EventResponse createEvent(EventRequest eventRequest, String organizerId) {
@@ -75,15 +76,15 @@ public class EventServiceImpl implements EventService {
 
     private void validateEventSize(String role, int expectedAttendees) {
         role = role.toUpperCase();
-        Integer maxAttendees = ROLE_MAX_ATTENDEES.get(role);
+        Integer maxAttendees = MAX_ATTENDEES_PER_ROLE.get(role);
 
         if (maxAttendees == null) {
-            log.error("No attendee limit configured for role '{}'.", role);
-            throw new IllegalStateException("No attendee limit configured for role: " + role);
+            log.error("No attendee limit configured for current role '{}'.", role);
+            throw new IllegalStateException("No attendee limit configured for current role: " + role);
         }
         if (maxAttendees < expectedAttendees) {
             log.error("User with role '{}' attempted to create an event with {} attendees (limit: {}).", role, expectedAttendees, maxAttendees);
-            throw new AccessDeniedException("User role limitations exceeded for attendee count.");
+            throw new AccessDeniedException("User role limitations exceeded for attendee count as per restrictions.");
         }
     }
 
@@ -91,7 +92,7 @@ public class EventServiceImpl implements EventService {
     public EventResponse getEventById(String id) {
         return eventRepository.findById(id)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new MissingEventException("Event not found with ID: " + id));
+                .orElseThrow(() -> new MissingEventException("Event not found with eventID: " + id));
     }
 
     @Override

@@ -25,19 +25,19 @@ repositories {
 
 dependencies {
     // Spring Boot dependencies
-    implementation("org.springframework.boot:spring-boot-starter-actuator") // Spring Boot Actuator for monitoring
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa") // JPA for database interactions
-    implementation("org.springframework.boot:spring-boot-starter-web") // Web starter for REST APIs
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.postgresql:postgresql:42.7.4")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
-    testImplementation("org.springframework.boot:spring-boot-starter-test") // Spring Boot test support (JUnit, Mockito)
-    testImplementation("io.rest-assured:rest-assured") // For API testing using RestAssured
-    testImplementation("org.springframework.boot:spring-boot-testcontainers") // Spring Boot Testcontainers support
-    testImplementation("org.testcontainers:junit-jupiter") // Testcontainers for JUnit 5
-    testImplementation("org.testcontainers:postgresql") // PostgreSQL container support for integration testing
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher") // JUnit platform runtime launcher
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.rest-assured:rest-assured")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {

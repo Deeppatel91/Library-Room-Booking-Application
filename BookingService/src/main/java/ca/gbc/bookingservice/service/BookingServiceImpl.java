@@ -1,6 +1,6 @@
 package ca.gbc.bookingservice.service;
 
-import ca.gbc.bookingservice.Transporter.ServiceHandler;
+import ca.gbc.bookingservice.Client.ServiceHandler;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
 import ca.gbc.bookingservice.model.Booking;
@@ -29,15 +29,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse createBooking(BookingRequest bookingRequest, String userId) {
-        // Validate room availability
         validateRoom(bookingRequest.roomId());
-
-        // Check for conflicting bookings for the room
         if (hasConflictingBooking(bookingRequest.roomId(), bookingRequest.startTime(), bookingRequest.endTime())) {
-            throw new IllegalArgumentException("The room is already booked for the selected time.");
+            throw new IllegalArgumentException("The room is already booked for the selected time Frame.");
         }
-
-        // Create and save new booking
         Booking booking = new Booking(null, userId, bookingRequest.roomId(),
                 bookingRequest.startTime(), bookingRequest.endTime(), bookingRequest.purpose());
         Booking savedBooking = bookingRepository.save(booking);
@@ -45,14 +40,11 @@ public class BookingServiceImpl implements BookingService {
         return toResponse(savedBooking);
     }
 
-    // ... (rest of the code remains the same)
-
-
     @Override
     public BookingResponse getBookingById(String id) {
         return bookingRepository.findById(id)
                 .map(this::toResponse)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new RuntimeException("Booking not found in BookingsDatabase"));
     }
 
     @Override
@@ -65,8 +57,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingResponse updateBooking(String id, BookingRequest bookingRequest, String userId) {
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
+                .orElseThrow(() -> new RuntimeException("Booking not found in BookingsDatabase"));
         booking.setRoomId(bookingRequest.roomId());
         booking.setStartTime(bookingRequest.startTime());
         booking.setEndTime(bookingRequest.endTime());
@@ -93,7 +84,7 @@ public class BookingServiceImpl implements BookingService {
 
     private void validateRoom(String roomId) {
         if (!serviceHandler.isRoomAvailable(roomId)) {
-            throw new IllegalArgumentException("Room is not available");
+            throw new IllegalArgumentException("Room is not available for that time frame");
         }
     }
 }

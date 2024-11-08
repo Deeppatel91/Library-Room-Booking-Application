@@ -7,7 +7,7 @@ import ca.gbc.userservice.dto.UserResponse;
 import ca.gbc.userservice.model.Roles;
 import ca.gbc.userservice.model.Users;
 import ca.gbc.userservice.repository.UsersRepository;
-import ca.gbc.userservice.security.JwtTokenProvider;
+import ca.gbc.userservice.SecurityConfigurations.JwtTokenProvider;
 import ca.gbc.userservice.service.UserService;
 import ca.gbc.userservice.service.UsersInformationImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +60,7 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')") // Restrict access to only ADMIN role
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> createNewUser(@RequestBody UserRequest request) {
         UserResponse userResponse = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
@@ -117,19 +117,6 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
-    @PutMapping("/role/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponse> changeUserRole(@PathVariable Long userId, @RequestParam String role) {
-        try {
-            Roles roleEnum = Roles.valueOf(role.toUpperCase());
-            var userResponse = userService.changeUserRole(userId, roleEnum);
-            return ResponseEntity.ok(userResponse);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new UserResponse());
-        }
-    }
-
     @PostMapping("/login")
     public ResponseEntity<AuthorizationResponse> createAuthenticationToken(@RequestBody AuthorizationRequest request) {
         try {
@@ -148,4 +135,19 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new AuthorizationResponse("Authentication failed"));
         }
     }
+
+    @PutMapping("/role/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> changeUserRole(@PathVariable Long userId, @RequestParam String role) {
+        try {
+            Roles roleEnum = Roles.valueOf(role.toUpperCase());
+            var userResponse = userService.changeUserRole(userId, roleEnum);
+            return ResponseEntity.ok(userResponse);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new UserResponse());
+        }
+    }
+
+
 }
