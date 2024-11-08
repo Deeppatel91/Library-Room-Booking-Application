@@ -31,7 +31,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse createBooking(BookingRequest bookingRequest, String userId) {
         validateRoom(bookingRequest.roomId());
         if (hasConflictingBooking(bookingRequest.roomId(), bookingRequest.startTime(), bookingRequest.endTime())) {
-            throw new IllegalArgumentException("The room is already booked for the selected time Frame.");
+            throw new IllegalArgumentException("The room is already booked for the selected time frame.");
         }
         Booking booking = new Booking(null, userId, bookingRequest.roomId(),
                 bookingRequest.startTime(), bookingRequest.endTime(), bookingRequest.purpose());
@@ -68,6 +68,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public void deleteBooking(String id) {
+        if (!bookingRepository.existsById(id)) {
+            throw new RuntimeException("Booking not found in BookingsDatabase");
+        }
         bookingRepository.deleteById(id);
     }
 

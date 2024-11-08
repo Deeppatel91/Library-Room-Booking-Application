@@ -20,9 +20,6 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-
-
-
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest bookingRequest, Authentication authentication) {
         String userIdFromToken = (String) authentication.getPrincipal();
@@ -31,12 +28,19 @@ public class BookingController {
             return ResponseEntity.ok(booking);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+
     @GetMapping("/{id}")
-    public ResponseEntity<BookingResponse> getBookingById(@PathVariable String id) {
-        BookingResponse booking = bookingService.getBookingById(id);
-        return ResponseEntity.ok(booking);
+    public ResponseEntity<?> getBookingById(@PathVariable String id) {
+        try {
+            BookingResponse booking = bookingService.getBookingById(id);
+            return ResponseEntity.ok(booking);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @GetMapping("/all")
@@ -45,15 +49,23 @@ public class BookingController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BookingResponse> updateBooking(@PathVariable String id, @RequestBody BookingRequest bookingRequest, Authentication authentication) {
+    public ResponseEntity<?> updateBooking(@PathVariable String id, @RequestBody BookingRequest bookingRequest, Authentication authentication) {
         String userId = (String) authentication.getPrincipal();
-        BookingResponse updatedBooking = bookingService.updateBooking(id, bookingRequest, userId);
-        return ResponseEntity.ok(updatedBooking);
+        try {
+            BookingResponse updatedBooking = bookingService.updateBooking(id, bookingRequest, userId);
+            return ResponseEntity.ok(updatedBooking);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBooking(@PathVariable String id) {
-        bookingService.deleteBooking(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteBooking(@PathVariable String id) {
+        try {
+            bookingService.deleteBooking(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 }

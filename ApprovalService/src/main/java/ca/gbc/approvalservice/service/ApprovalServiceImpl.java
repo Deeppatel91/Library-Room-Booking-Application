@@ -1,4 +1,3 @@
-
 package ca.gbc.approvalservice.service;
 
 import ca.gbc.approvalservice.dto.ApprovalRequest;
@@ -12,6 +11,9 @@ import ca.gbc.approvalservice.Client.UserServiceFeignClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,54 +37,57 @@ public class ApprovalServiceImpl implements ApprovalService {
             event = eventServiceFeignClient.getEventById(request.eventId(), formattedToken);
         } catch (Exception e) {
             log.error("Failed to fetch event with ID {}: {}", request.eventId(), e.getMessage());
-            throw new IllegalArgumentException("Failed to retrieve event with ID: " + request.eventId());
-        }
-
-        if (event == null) {
-            log.error("Event with ID {} not found", request.eventId());
-            throw new IllegalArgumentException("Invalid event ID");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to retrieve event with ID: " + request.eventId());
         }
 
         User approver;
         try {
             approver = userServiceFeignClient.getUserById(request.approverId(), formattedToken);
+            if (approver == null || !"STAFF".equalsIgnoreCase(approver.role())) {
+                log.error("User with ID {} does not have approval permissions", request.approverId());
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Approver does not have permission to approve events");
+            }
         } catch (Exception e) {
             log.error("Failed to fetch user with ID {}: {}", request.approverId(), e.getMessage());
-            throw new SecurityException("Approver validation failed.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Approver validation failed.");
         }
 
-        if (approver == null || !"STAFF".equalsIgnoreCase(approver.role())) {
-            log.error("User with ID {} does not have approval permissions", request.approverId());
-            throw new SecurityException("Approver does not have permission to approve events");
-        }
         Approval approval = new Approval();
         approval.setEventId(request.eventId());
         approval.setApproverId(request.approverId());
         approval.setStatus(request.status());
         approval.setComment(request.comment());
         approval.setApprovedAt(LocalDateTime.now());
-        approval = approvalRepository.save(approval);
-        log.info("Event with ID {} approved successfully by user {}", request.eventId(), request.approverId());
+
+        try {
+            approval = approvalRepository.save(approval);
+            log.info("Event with ID {} approved successfully by user {}", request.eventId(), request.approverId());
+        } catch (Exception e) {
+            log.error("Failed to save approval: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save approval.");
+        }
+
         return mapToResponseDTO(approval);
     }
 
     private String formatBearerToken(String token) {
         return token != null && !token.trim().startsWith("Bearer ") ? "Bearer " + token.trim() : token;
     }
+
     @Override
     public ApprovalResponse getApprovalById(String id) {
         log.info("Fetching approval with ID: {}", id);
         Approval approval = approvalRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Approval with ID {} not found", id);
-                    return new IllegalArgumentException("Approval not found");
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval not found");
                 });
         return mapToResponseDTO(approval);
     }
+
     @Override
     public ApprovalResponse updateApproval(String id, ApprovalRequest request, String token) {
         log.info("Updating approval with ID: {}", id);
-
         String formattedToken = formatBearerToken(token);
 
         User approver;
@@ -90,43 +95,39 @@ public class ApprovalServiceImpl implements ApprovalService {
             approver = userServiceFeignClient.getUserById(request.approverId(), formattedToken);
             if (approver == null || !"STAFF".equalsIgnoreCase(approver.role())) {
                 log.error("User with ID {} does not have permission to update approvals", request.approverId());
-                throw new SecurityException("Only STAFF users are allowed to update approvals.");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only STAFF users are allowed to update approvals.");
             }
         } catch (Exception e) {
             log.error("Error validating approver ID {}: {}", request.approverId(), e.getMessage());
-            throw new SecurityException("Approver validation failed: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Approver validation failed: " + e.getMessage());
         }
 
-        Approval existingApproval;
-        try {
-            existingApproval = approvalRepository.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Approval not found"));
-        } catch (Exception e) {
-            log.error("Error fetching approval with ID {}: {}", id, e.getMessage());
-            throw new IllegalArgumentException("Error finding approval with ID: " + id);
-        }
+        Approval existingApproval = approvalRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval not found"));
+
         existingApproval.setStatus(request.status());
         existingApproval.setComment(request.comment());
         existingApproval.setApprovedAt(LocalDateTime.now());
-        Approval updatedApproval;
+
         try {
-            updatedApproval = approvalRepository.save(existingApproval);
+            return mapToResponseDTO(approvalRepository.save(existingApproval));
         } catch (Exception e) {
             log.error("Error saving updated approval: {}", e.getMessage());
-            throw new RuntimeException("Failed to save updated approval");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save updated approval");
         }
-
-        log.info("Approval with ID {} updated successfully by staff {}", id, request.approverId());
-        return mapToResponseDTO(updatedApproval);
     }
-
 
     @Override
     public List<ApprovalResponse> getAllApprovals() {
         log.info("Fetching all approvals");
-        return approvalRepository.findAll().stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
+        try {
+            return approvalRepository.findAll().stream()
+                    .map(this::mapToResponseDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error fetching all approvals: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve approvals");
+        }
     }
 
     @Override
@@ -134,17 +135,27 @@ public class ApprovalServiceImpl implements ApprovalService {
         log.info("Deleting approval with ID: {}", id);
         if (!approvalRepository.existsById(id)) {
             log.error("Approval with ID {} not found for deletion", id);
-            throw new IllegalArgumentException("Approval not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval not found");
         }
-        approvalRepository.deleteById(id);
+        try {
+            approvalRepository.deleteById(id);
+        } catch (Exception e) {
+            log.error("Failed to delete approval with ID {}: {}", id, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete approval");
+        }
     }
 
     @Override
     public List<ApprovalResponse> getApprovalsForEvent(String eventId) {
         log.info("Fetching approvals for event ID: {}", eventId);
-        return approvalRepository.findByEventId(eventId).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
+        try {
+            return approvalRepository.findByEventId(eventId).stream()
+                    .map(this::mapToResponseDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error fetching approvals for event ID {}: {}", eventId, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve approvals for event");
+        }
     }
 
     private ApprovalResponse mapToResponseDTO(Approval approval) {
