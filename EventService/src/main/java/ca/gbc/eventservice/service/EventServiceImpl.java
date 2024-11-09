@@ -90,18 +90,19 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventResponse> getAllEvents() {
+        return eventRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    @Override
     public EventResponse getEventById(String id) {
         return eventRepository.findById(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new MissingEventException("Event not found with eventID: " + id));
     }
 
-    @Override
-    public List<EventResponse> getAllEvents() {
-        return eventRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+
 
     @Override
     public void deleteEvent(String id, String organizerId) {

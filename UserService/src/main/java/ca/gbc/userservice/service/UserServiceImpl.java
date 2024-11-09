@@ -40,14 +40,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(Long userId) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
+                .orElseThrow(() -> new RuntimeException("User not found for the your given id"));
         return mapToResponse(user);
     }
 
     @Override
     public UserResponse updateUser(Long userId, UserRequest request) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
+                .orElseThrow(() -> new RuntimeException("User not found for the your given id"));
 
         user.setName(request.getName());
         user.setEmail(request.getEmail());
@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse deactivateUser(Long userId) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
+                .orElseThrow(() -> new RuntimeException("User not found for the your given id"));
         user.setActive(false);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
@@ -76,7 +76,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse activateUser(Long userId) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
+                .orElseThrow(() -> new RuntimeException("User not found for the your given id"));
         user.setActive(true);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
@@ -85,7 +85,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse changeUserRole(Long userId, Roles role) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
+                .orElseThrow(() -> new RuntimeException("User not found for the your given id"));
         user.setRole(role);
         Users updatedUser = usersRepository.save(user);
         return mapToResponse(updatedUser);
@@ -116,7 +116,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Roles getUserRole(String organizerId) {
         Users user = usersRepository.findById(Long.parseLong(organizerId))
-                .orElseThrow(() -> new RuntimeException("User not found for the given id"));
+                .orElseThrow(() -> new RuntimeException("User not found for the your given id"));
         return user.getRole();
     }
     private UserResponse mapToResponse(Users user) {

@@ -47,7 +47,7 @@ class BookingServiceApplicationTests {
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
         registry.add("jwt.secret", () -> "775367566B5970743373367639792F423F4528482B4D6251655468576D5A713474");
-        registry.add("ROOM_SERVICE_URL", () -> "http://localhost:8090");  // Set to localhost for testing
+        registry.add("ROOM_SERVICE_URL", () -> "http://localhost:8090");
     }
 
     @MockBean
