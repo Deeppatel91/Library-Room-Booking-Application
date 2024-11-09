@@ -103,14 +103,14 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/deactivate/{userId}")
+    @PutMapping("/Deactivate/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> deactivateUser(@PathVariable Long userId) {
         var userResponse = userService.deactivateUser(userId);
         return ResponseEntity.ok(userResponse);
     }
 
-    @PutMapping("/activate/{userId}")
+    @PutMapping("/Activate/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> activateUser(@PathVariable Long userId) {
         var userResponse = userService.activateUser(userId);
@@ -136,7 +136,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("/role/{userId}")
+    @PutMapping("/Role/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> changeUserRole(@PathVariable Long userId, @RequestParam String role) {
         try {

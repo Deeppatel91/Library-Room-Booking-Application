@@ -169,7 +169,7 @@ class UserServiceApplicationTests {
         given()
                 .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .put("/api/users/deactivate/" + user.getId())
+                .put("/api/users/Deactivate/" + user.getId())
                 .then()
                 .statusCode(200)
                 .body("active", equalTo(false));
@@ -187,7 +187,7 @@ class UserServiceApplicationTests {
                 .header("Authorization", "Bearer " + jwtToken)
                 .param("role", "ADMIN")
                 .when()
-                .put("/api/users/role/" + user.getId())
+                .put("/api/users/Role/" + user.getId())
                 .then()
                 .statusCode(200)
                 .body("role", equalTo("ADMIN"));
@@ -201,7 +201,7 @@ class UserServiceApplicationTests {
         given()
                 .header("Authorization", "Bearer " + jwtToken)
                 .when()
-                .put("/api/users/activate/" + user.getId())
+                .put("/api/users/Activate/" + user.getId())
                 .then()
                 .statusCode(200)
                 .body("active", equalTo(true));
