@@ -5,5 +5,4 @@ public record ApprovalRequest(
         String approverId,
         String comment,
         String status
-) {
-}
+) { }

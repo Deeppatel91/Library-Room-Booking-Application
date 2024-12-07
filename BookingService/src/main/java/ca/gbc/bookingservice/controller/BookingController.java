@@ -3,69 +3,50 @@ package ca.gbc.bookingservice.controller;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
 import ca.gbc.bookingservice.service.BookingService;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
+@RequiredArgsConstructor
 public class BookingController {
 
     private final BookingService bookingService;
 
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
-
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody BookingRequest bookingRequest, Authentication authentication) {
-        String userIdFromToken = (String) authentication.getPrincipal();
-        try {
-            BookingResponse booking = bookingService.createBooking(bookingRequest, userIdFromToken);
-            return ResponseEntity.ok(booking);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<BookingResponse> createBooking(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody BookingRequest bookingRequest) {
+        BookingResponse booking = bookingService.createBooking(bookingRequest, authorization);
+        return ResponseEntity.ok(booking);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getBookingById(@PathVariable String id) {
-        try {
-            BookingResponse booking = bookingService.getBookingById(id);
-            return ResponseEntity.ok(booking);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<BookingResponse> getBookingById(@PathVariable String id) {
+        BookingResponse booking = bookingService.getBookingById(id);
+        return ResponseEntity.ok(booking);
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateBooking(@PathVariable String id, @RequestBody BookingRequest bookingRequest, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
-        try {
-            BookingResponse updatedBooking = bookingService.updateBooking(id, bookingRequest, userId);
-            return ResponseEntity.ok(updatedBooking);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<BookingResponse> updateBooking(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable String id,
+            @RequestBody BookingRequest bookingRequest) {
+        BookingResponse updatedBooking = bookingService.updateBooking(id, bookingRequest, authorization);
+        return ResponseEntity.ok(updatedBooking);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteBooking(@PathVariable String id) {
-        try {
-            bookingService.deleteBooking(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Void> deleteBooking(@PathVariable String id) {
+        bookingService.deleteBooking(id);
+        return ResponseEntity.noContent().build();
     }
 }

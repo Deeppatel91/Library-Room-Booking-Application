@@ -24,7 +24,6 @@ repositories {
 }
 
 dependencies {
-	// Core dependencies
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -36,6 +35,9 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
+	implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.1.2")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+	testImplementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
@@ -43,6 +45,10 @@ dependencies {
 	testImplementation("org.testcontainers:mongodb")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("io.rest-assured:rest-assured:5.3.0")
+	implementation("org.springframework.kafka:spring-kafka:3.3.0")
+	testImplementation("org.springframework.kafka:spring-kafka-test:3.3.0")
+	testImplementation("org.testcontainers:kafka:1.20.4")
+
 }
 
 

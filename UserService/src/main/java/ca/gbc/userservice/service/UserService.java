@@ -2,25 +2,16 @@ package ca.gbc.userservice.service;
 
 import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.dto.UserResponse;
-import ca.gbc.userservice.model.Roles;
-import org.springframework.security.core.userdetails.UserDetails;
 
-public interface UserService{
-    UserResponse createUser(UserRequest request);
-    UserResponse getUserById(Long userId);
-    UserResponse updateUser(Long userId, UserRequest request);
-    void deleteUser(Long userId);
-    UserResponse deactivateUser(Long userId);
-    UserResponse activateUser(Long userId);
+import java.util.List;
 
-
-    UserResponse changeUserRole(Long userId, Roles role);
-
-    UserDetails loadUserByUsername(String email);
-
-    boolean noAdminExists();
-
-    Object changeUserRole(Long userId, String name);
-
-    Roles getUserRole(String organizerId);
+public interface UserService {
+    UserResponse createUser(UserRequest userRequest); // Create a user
+    UserResponse getUserById(Long id); // Get a user by ID
+    List<UserResponse> getAllUsers(); // Get all users
+    UserResponse updateUser(Long id, UserRequest userRequest); // Update a user
+    void deleteUser(Long id); // Delete a user
+    UserResponse deactivateUser(Long id); // Deactivate a user
+    UserResponse activateUser(Long id); // Activate a user
+    UserResponse logIn(String email, String password); // Log in a user
 }

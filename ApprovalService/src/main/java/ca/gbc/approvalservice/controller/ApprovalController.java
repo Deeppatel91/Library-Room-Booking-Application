@@ -17,75 +17,70 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class ApprovalController {
+
     private final ApprovalService approvalService;
 
     @PostMapping
-    public ResponseEntity<?> approveEvent(@RequestBody ApprovalRequest request, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<ApprovalResponse> approveEvent(@RequestHeader("Authorization") String authorization, @RequestBody ApprovalRequest request) {
         try {
-            ApprovalResponse approval = approvalService.approveEvent(request, token);
+            log.info("Request to approve event: {}", request);
+            ApprovalResponse approval = approvalService.approveEvent(request, authorization);
             return ResponseEntity.ok(approval);
         } catch (ResponseStatusException e) {
-            log.error("Error approving event: {}", e.getMessage());
-            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+            log.error("Error during approval process: {}, Status: {}", e.getReason(), e.getStatusCode());
+            return ResponseEntity.status(e.getStatusCode()).build();
         } catch (Exception e) {
-            log.error("Unexpected error approving event: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error approving event");
+            log.error("Unexpected error during approval process: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllApprovals() {
-        try {
-            List<ApprovalResponse> approvals = approvalService.getAllApprovals();
-            return ResponseEntity.ok(approvals);
-        } catch (ResponseStatusException e) {
-            log.error("Error retrieving approvals: {}", e.getMessage());
-            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
-        } catch (Exception e) {
-            log.error("Unexpected error retrieving approvals: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error retrieving approvals");
-        }
-    }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getApprovalById(@PathVariable String id) {
+    public ResponseEntity<ApprovalResponse> getApprovalById(@PathVariable String id) {
         try {
+            log.info("Fetching approval by ID: {}", id);
             ApprovalResponse approval = approvalService.getApprovalById(id);
             return ResponseEntity.ok(approval);
-        } catch (ResponseStatusException e) {
-            log.error("Error retrieving approval with ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            log.error("Unexpected error retrieving approval with ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error retrieving approval");
+            log.error("Error fetching approval by ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ApprovalResponse>> getAllApprovals() {
+        try {
+            log.info("Fetching all approvals");
+            List<ApprovalResponse> approvals = approvalService.getAllApprovals();
+            return ResponseEntity.ok(approvals);
+        } catch (Exception e) {
+            log.error("Error fetching all approvals: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateApproval(@PathVariable String id, @RequestBody ApprovalRequest request, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<ApprovalResponse> updateApproval(@PathVariable String id, @RequestHeader("Authorization") String authorization, @RequestBody ApprovalRequest request) {
         try {
-            ApprovalResponse updatedApproval = approvalService.updateApproval(id, request, token);
+            log.info("Request to update approval with ID: {}", id);
+            ApprovalResponse updatedApproval = approvalService.updateApproval(id, request, authorization);
             return ResponseEntity.ok(updatedApproval);
-        } catch (ResponseStatusException e) {
-            log.error("Error updating approval with ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            log.error("Unexpected error updating approval with ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error updating approval");
+            log.error("Error updating approval with ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteApproval(@PathVariable String id) {
+    public ResponseEntity<Void> deleteApproval(@PathVariable String id, @RequestHeader("Authorization") String authorization) {
         try {
+            log.info("Request to delete approval with ID: {}", id);
             approvalService.deleteApproval(id);
             return ResponseEntity.noContent().build();
-        } catch (ResponseStatusException e) {
-            log.error("Error deleting approval with ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            log.error("Unexpected error deleting approval with ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error deleting approval");
+            log.error("Error deleting approval with ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 }

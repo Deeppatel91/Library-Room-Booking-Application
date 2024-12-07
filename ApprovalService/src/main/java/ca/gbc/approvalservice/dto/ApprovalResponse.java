@@ -9,5 +9,4 @@ public record ApprovalResponse(
         String status,
         String comment,
         LocalDateTime approvedAt
-) {
-}
+) {}

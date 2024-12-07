@@ -1,5 +1,7 @@
 package ca.gbc.approvalservice.dto;
 
+
+
 public record Event(
         String id,
         String organizerId,

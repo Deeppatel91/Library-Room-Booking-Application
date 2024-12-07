@@ -1,19 +1,18 @@
-# --------
-# Build stage
-# --------
+#--------
+#Buid stage
+#--------
+
 FROM gradle:8-jdk21-alpine AS builder
 
+COPY --chown=gradle:gradle . /home/gradle/src/
+
 WORKDIR /home/gradle/src
-COPY . .
 
-ENV JAVA_HOME=/opt/java/openjdk
-ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.java.home=$JAVA_HOME"
+RUN gradle build -x test
 
-RUN ./gradlew build -x test
-
-# --------
-# Package stage
-# --------
+#--------
+#Package stage
+#--------
 FROM openjdk:21-jdk
 
 RUN mkdir /app
@@ -21,9 +20,5 @@ RUN mkdir /app
 COPY --from=builder /home/gradle/src/build/libs/*.jar /app/room-service.jar
 
 EXPOSE 8090
-
-ENV SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/RoomService \
-    SPRING_DATASOURCE_USERNAME=admin \
-    SPRING_DATASOURCE_PASSWORD=password
 
 ENTRYPOINT ["java", "-jar", "/app/room-service.jar"]

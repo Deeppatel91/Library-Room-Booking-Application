@@ -47,6 +47,10 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:mongodb")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // SpringDoc for Swagger/OpenAPI
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.1.2")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    testImplementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0")
 }
 
 dependencyManagement {

@@ -1,6 +1,5 @@
 package ca.gbc.userservice;
 
-import ca.gbc.userservice.dto.AuthorizationRequest;
 import ca.gbc.userservice.dto.UserRequest;
 import ca.gbc.userservice.model.Roles;
 import ca.gbc.userservice.model.Users;
