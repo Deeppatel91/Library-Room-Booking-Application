@@ -173,7 +173,7 @@ public class Routes {
                                 .and(request -> !request.path().contains("/swagger-ui"))
                                 .and(request -> !request.path().contains("/api-docs")),
                         request -> ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE)
-                                .body("Service is Temporarily Unavailable, please try again later"))
+                                .body("Service is Temporarily Unavailable, please try again later...."))
                 .build();
     }
 

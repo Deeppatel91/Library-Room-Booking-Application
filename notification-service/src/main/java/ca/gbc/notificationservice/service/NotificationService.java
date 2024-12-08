@@ -21,13 +21,12 @@ public class NotificationService {
     @KafkaListener(topics = "booking-placed", groupId = "notificationService")
     public void listenToBookingPlaced(BookingPlacedEvent bookingPlacedEvent) {
         log.info("Listening to 'booking-placed' topic...");
-
         if (bookingPlacedEvent == null) {
             log.error("Received null BookingPlacedEvent from 'booking-placed' topic.");
             return;
         }
+        log.info("Processing BookingPlacedEvent: {}", bookingPlacedEvent);
 
-        log.info("Processing booking confirmation for Booking ID: {}", bookingPlacedEvent.getBookingId());
         try {
             sendEmail(
                     bookingPlacedEvent.getEmail(),
@@ -35,16 +34,18 @@ public class NotificationService {
                     String.format(
                             """
                             Hello,
-                            
-                            Your booking has been successfully confirmed.
-                            
-                            Booking Details:
-                            - Booking ID: %s
-                            
-                            Thank you for using our BookingService.
-                            
-                            Best Regards,
-                            GBC Group-21
+
+                            Congratulations! Your booking has been successfully confirmed.
+
+                            📋 **Booking Details:**
+                            -----------------------------------------
+                            ✅ **Booking ID:** %s
+                            -----------------------------------------
+
+                            Thank you for choosing **GBC BookingService**. We are delighted to assist you with your booking needs.
+
+                            Warm regards,  
+                            The GBC Group-21 Team
                             """,
                             bookingPlacedEvent.getBookingId()
                     )
@@ -57,13 +58,12 @@ public class NotificationService {
     @KafkaListener(topics = "event-placed", groupId = "notificationService")
     public void listenToEventPlaced(EventPlacedEvent eventPlacedEvent) {
         log.info("Listening to 'event-placed' topic...");
-
         if (eventPlacedEvent == null) {
             log.error("Received null EventPlacedEvent from 'event-placed' topic.");
             return;
         }
+        log.info("Processing EventPlacedEvent: {}", eventPlacedEvent);
 
-        log.info("Processing event confirmation for Event ID: {}", eventPlacedEvent.getEventId());
         try {
             sendEmail(
                     eventPlacedEvent.getEmail(),
@@ -71,16 +71,18 @@ public class NotificationService {
                     String.format(
                             """
                             Hello,
-                            
+
                             Your event has been successfully registered.
-                            
-                            Event Details:
-                            - Event ID: %s
-                            
-                            Thank you for using our EventService.
-                            
-                            Best Regards,
-                            GBC Group-21
+
+                            📋 **Event Details:**
+                            -----------------------------------------
+                            ✅ **Event ID:** %s
+                            -----------------------------------------
+
+                            Thank you for using **GBC EventService**.
+
+                            Warm regards,  
+                            The GBC Group-21 Team
                             """,
                             eventPlacedEvent.getEventId()
                     )
