@@ -73,10 +73,3 @@ The **Library Room Reservation Project** is a robust Spring Boot-based microserv
 - **API Testing:** Postman
 
 ---
-
-## Setup and Deployment
-
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/your-username/library-room-reservation.git
-   cd library-room-reservation
